@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import SessionProvider from "@/components/SessionProvider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -42,7 +43,7 @@ export default function RootLayout({
         <div className="bg-orbs" aria-hidden="true" />
         {/* Grain texture */}
         <div className="grain" aria-hidden="true" />
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

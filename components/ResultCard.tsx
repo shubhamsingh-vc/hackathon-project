@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface ResultCardProps {
   type: string;
   content: string | string[];
   platform: string;
   tone: string;
+  topic: string;
 }
 
 const TYPE_META: Record<string, { label: string; color: string }> = {
@@ -16,8 +19,12 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
   script: { label: "Script", color: "#8B5CF6" },
 };
 
-export default function ResultCard({ type, content, platform, tone }: ResultCardProps) {
+export default function ResultCard({ type, content, platform, tone, topic }: ResultCardProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleCopy = async () => {
     const text = Array.isArray(content) ? content.join("\n") : content;
@@ -33,6 +40,29 @@ export default function ResultCard({ type, content, platform, tone }: ResultCard
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleSave = async () => {
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/saved", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, platform, tone, topic, content }),
+      });
+
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const meta = TYPE_META[type] || { label: type, color: "#7C3AED" };
@@ -52,32 +82,81 @@ export default function ResultCard({ type, content, platform, tone }: ResultCard
           {type !== "hashtags" && <span className="eyebrow">{tone}</span>}
         </div>
 
-        {/* Copy button */}
-        <button
-          onClick={handleCopy}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
-            copied
-              ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
-              : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-          }`}
-        >
-          {copied ? (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Copied!
-            </>
-          ) : (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              Copy
-            </>
+        <div className="flex items-center gap-2">
+          {/* Save button */}
+          {session && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
+                saved
+                  ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
+                  : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+              }`}
+            >
+              {saving ? (
+                <>
+                  <span className="spinner !w-3 !h-3" />
+                  Saving...
+                </>
+              ) : saved ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Saved!
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Save
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          {/* Sign in to save prompt */}
+          {!session && (
+            <button
+              onClick={() => router.push("/auth/signin")}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Save
+            </button>
+          )}
+
+          {/* Copy button */}
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
+              copied
+                ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
+                : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copy
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Result — Double-Bezel */}

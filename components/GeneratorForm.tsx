@@ -267,6 +267,7 @@ export default function GeneratorForm() {
           content={result.content}
           platform={platform}
           tone={tone}
+          topic={topic}
         />
       )}
     </div>
