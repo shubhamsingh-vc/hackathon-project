@@ -38,7 +38,7 @@ export default function ResultCard({ type, content, platform, tone }: ResultCard
   const meta = TYPE_META[type] || { label: type, color: "#7C3AED" };
 
   return (
-    <div className="reveal">
+    <div className="fade-in">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex flex-wrap items-center gap-2">
