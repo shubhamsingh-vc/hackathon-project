@@ -55,6 +55,10 @@ Output only the script, nothing else.`;
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], maxTokens);
     const script = extractText(response);
 
+    if (!script.trim()) {
+      throw new Error("AI returned an empty response. Please try again.");
+    }
+
     return NextResponse.json({ script });
   } catch (error) {
     console.error("Script generation error:", error);

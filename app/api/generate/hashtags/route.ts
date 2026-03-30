@@ -34,10 +34,19 @@ Output format (just hashtags, nothing else):
 
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 300);
     const rawText = extractText(response);
+
+    if (!rawText.trim()) {
+      throw new Error("AI returned an empty response. Please try again.");
+    }
+
     const hashtags = rawText
       .split(/[\s,]+/)
       .map((tag) => tag.trim())
       .filter((tag) => tag.startsWith("#"));
+
+    if (hashtags.length === 0) {
+      throw new Error("Could not parse hashtags. Please try again.");
+    }
 
     return NextResponse.json({ hashtags });
   } catch (error) {

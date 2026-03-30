@@ -39,6 +39,10 @@ Output only the caption, nothing else.`;
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 500);
     const caption = extractText(response);
 
+    if (!caption.trim()) {
+      throw new Error("AI returned an empty response. Please try again.");
+    }
+
     return NextResponse.json({ caption });
   } catch (error) {
     console.error("Caption generation error:", error);

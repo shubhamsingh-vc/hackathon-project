@@ -36,10 +36,19 @@ Output format (just the hooks, nothing else):
 
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 400);
     const hooksText = extractText(response);
+
+    if (!hooksText.trim()) {
+      throw new Error("AI returned an empty response. Please try again.");
+    }
+
     const hooks = hooksText
       .split("\n")
       .map((line) => line.replace(/^\d+\.\s*/, "").trim())
       .filter(Boolean);
+
+    if (hooks.length === 0) {
+      throw new Error("Could not parse hooks. Please try again.");
+    }
 
     return NextResponse.json({ hooks });
   } catch (error) {
