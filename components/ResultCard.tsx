@@ -57,10 +57,60 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
+
+  // Classify hashtags: trending (short, generic), niche (specific, longer)
+  const categorize = (tag: string) => {
+    const t = tag.toLowerCase();
+    const trending = ["#fyp", "#foryou", "#foryoupage", "#viral", "#trending", "#explore", "#reels", "#shorts", "#tiktok"];
+    if (trending.some((tr) => t.includes(tr.replace("#", "")))) return "trending";
+    if (tag.length > 16) return "niche";
+    return "regular";
+  };
+
+  const trending = content.filter((t) => categorize(t) === "trending");
+  const niche = content.filter((t) => categorize(t) === "niche");
+  const regular = content.filter((t) => categorize(t) === "regular");
+
+  const TagBadge = ({ tag }: { tag: string }) => {
+    const cat = categorize(tag);
+    const styles: Record<string, { bg: string; border: string; color: string; shadow: string }> = {
+      trending: { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", color: "#F87171", shadow: "0 0 12px rgba(239,68,68,0.15)" },
+      niche: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", color: "#34D399", shadow: "0 0 12px rgba(16,185,129,0.15)" },
+      regular: { bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.2)", color: "#A855F7", shadow: "0 0 12px rgba(168,85,247,0.15)" },
+    };
+    const s = styles[cat];
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(tag); }}
+        className="group relative px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap"
+        style={{
+          background: s.bg,
+          border: `1px solid ${s.border}`,
+          color: s.color,
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = s.shadow;
+          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+        }}
+        title={`Click to copy: ${tag}`}
+      >
+        {tag}
+      </button>
+    );
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[12px]" style={{ background: "rgba(168,85,247,0.15)", color: "#A855F7" }}>#</span>
           <span className="text-[11px] font-bold text-[#A855F7] uppercase tracking-wider">Hashtags</span>
           <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
         </div>
@@ -71,38 +121,132 @@ function HashtagsOutput({ content }: { content: string[] }) {
             copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
           }`}
         >
-          {copiedAll ? "Copied!" : "Copy All"}
+          {copiedAll ? "✓ Copied!" : "Copy All"}
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {content.map((tag, i) => (
-          <CopyBtn key={i} text={tag} label={tag.length > 18 ? tag.substring(0, 18) + "…" : tag} />
-        ))}
-      </div>
+
+      {/* Trending */}
+      {trending.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#F87171" }} />
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#F87171" }}>Trending</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {trending.map((tag, i) => <TagBadge key={i} tag={tag} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Regular */}
+      {regular.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#A855F7" }} />
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#A855F7" }}>Popular</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {regular.map((tag, i) => <TagBadge key={i} tag={tag} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Niche */}
+      {niche.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#34D399" }} />
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#34D399" }}>Niche</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {niche.map((tag, i) => <TagBadge key={i} tag={tag} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
-  const hookTypes = ["Story Hook", "Stat Hook", "Question Hook", "Bold Hook"];
+  const hookTypes = [
+    { label: "Story Hook", icon: "📖", accent: "#A855F7", bg: "rgba(124,58,237,0.08)", border: "rgba(124,58,237,0.2)" },
+    { label: "Stat Hook", icon: "📊", accent: "#F59E0B", bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.2)" },
+    { label: "Question Hook", icon: "❓", accent: "#10B981", bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.2)" },
+    { label: "Bold Hook", icon: "🔥", accent: "#EF4444", bg: "rgba(239,68,68,0.06)", border: "rgba(239,68,68,0.2)" },
+  ];
+
   return (
     <div className="space-y-3">
       {content.map((hook, i) => {
+        const hookMeta = hookTypes[i % hookTypes.length];
         const isQuestion = hook.includes("?");
         const hasStat = /\d+%|\d+K|\$\d/.test(hook);
+        const hasExclamation = hook.includes("!") && hook.split("!").length > 2;
+
         return (
-          <div key={i} className="group relative rounded-2xl p-5 bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] hover:border-[rgba(124,58,237,0.35)] hover:bg-[rgba(124,58,237,0.1)] transition-all duration-500">
+          <div
+            key={i}
+            className="group relative rounded-2xl p-5 transition-all duration-500"
+            style={{
+              background: hookMeta.bg,
+              border: `1px solid ${hookMeta.border}`,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLDivElement).style.borderColor = `${hookMeta.accent}50`;
+              (e.currentTarget as HTMLDivElement).style.background = hookMeta.bg.replace("0.06", "0.12").replace("0.08", "0.14");
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLDivElement).style.borderColor = hookMeta.border;
+              (e.currentTarget as HTMLDivElement).style.background = hookMeta.bg;
+            }}
+          >
+            {/* Header row */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold" style={{ background: "rgba(124,58,237,0.2)", color: "#A855F7" }}>{i + 1}</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#A855F7" }}>{hookTypes[i] || `Hook ${i + 1}`}</span>
-                {isQuestion && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(16,185,129,0.1)] text-[#10B981] border border-[rgba(16,185,129,0.2)]">?</span>}
-                {hasStat && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(245,158,11,0.1)] text-[#F59E0B] border border-[rgba(245,158,11,0.2)]">%</span>}
+                <span
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-[14px] font-bold"
+                  style={{ background: `${hookMeta.accent}20`, color: hookMeta.accent }}
+                >
+                  {hookMeta.icon}
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: hookMeta.accent }}>
+                  {hookMeta.label}
+                </span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{
+                    background: `${hookMeta.accent}15`,
+                    color: hookMeta.accent,
+                    border: `1px solid ${hookMeta.accent}30`,
+                  }}
+                >
+                  #{i + 1}
+                </span>
               </div>
               <CopyBtn text={hook} />
             </div>
-            <p className="text-[15px] text-[#E5E7EB] leading-relaxed font-medium">{hook}</p>
+
+            {/* Hook text — styled by type */}
+            <p
+              className="text-[15px] leading-relaxed font-semibold"
+              style={{
+                color: hookMeta.accent,
+                textShadow: `0 0 30px ${hookMeta.accent}20`,
+              }}
+            >
+              {hook}
+            </p>
+
+            {/* Bottom accent line */}
+            <div
+              className="absolute bottom-0 left-6 right-6 h-px rounded-full transition-opacity duration-500"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${hookMeta.accent}40, transparent)`,
+                opacity: 0,
+              }}
+              id={`hook-accent-${i}`}
+            />
           </div>
         );
       })}
@@ -114,117 +258,212 @@ function HooksOutput({ content }: { content: string[] }) {
 function CaptionOutput({ content }: { content: string }) {
   const lines = content.split("\n").filter((l) => l.trim() !== "");
   const totalChars = content.length;
+  const isLongForm = totalChars > 200;
+
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6366F1" }}>Caption</span>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5 pb-4" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
+        <div className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[12px]" style={{ background: "rgba(99,102,241,0.15)", color: "#818CF8" }}>✍</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6366F1" }}>Caption</span>
+        </div>
         <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-        {totalChars > 200 && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(99,102,241,0.1)] text-[#6366F1] border border-[rgba(99,102,241,0.2)]">Long form</span>}
-        <CopyBtn text={content} label="Full" />
+        {isLongForm && (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[rgba(99,102,241,0.1)] text-[#818CF8] border border-[rgba(99,102,241,0.2)]">
+            Long Form
+          </span>
+        )}
+        <div className="ml-auto">
+          <CopyBtn text={content} label="Copy Caption" />
+        </div>
       </div>
-      {lines.map((line, i) => {
-        const isEmoji = /^[\p{Emoji}]+$/u.test(line.trim());
-        const isEllipsis = line.trim() === "..." || line.trim() === "…";
-        const isCTA = /\b(link|bio|follow|comment|share|save|tag)\b/i.test(line);
-        return (
-          <p key={i} className={`text-[14px] leading-relaxed ${isEmoji ? "text-2xl" : isEllipsis ? "text-[#6B7280]" : isCTA ? "text-[#10B981] font-medium" : "text-[#E5E7EB]"}`}>{line}</p>
-        );
-      })}
+
+      {/* Caption lines */}
+      <div className="space-y-3">
+        {lines.map((line, i) => {
+          const trimmed = line.trim();
+          const isEmoji = /^[\p{Emoji}\s]+$/u.test(trimmed) && trimmed.length <= 10;
+          const isEllipsis = trimmed === "..." || trimmed === "…";
+          const isCTA = /\b(link in bio|follow|comment|share|save this|link|bio|dm me|tag a friend|follow for more|subscribe)\b/i.test(trimmed);
+          const isHashtag = trimmed.startsWith("#") || /^\s*#\w/.test(line);
+          const isMention = /@[\w]+/.test(trimmed);
+          const isBold = /^\*\*.+\*\*$/.test(trimmed);
+
+          if (isEmoji) {
+            return (
+              <p key={i} className="text-3xl leading-none py-1" style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.3))" }}>
+                {trimmed}
+              </p>
+            );
+          }
+
+          if (isEllipsis) {
+            return (
+              <p key={i} className="text-[14px] text-[#6B7280] text-center py-1 tracking-widest">
+                · · ·
+              </p>
+            );
+          }
+
+          if (isCTA) {
+            return (
+              <p key={i} className="text-[14px] leading-relaxed font-semibold" style={{ color: "#10B981", textShadow: "0 0 20px rgba(16,185,129,0.2)" }}>
+                {line}
+              </p>
+            );
+          }
+
+          if (isBold) {
+            return (
+              <p key={i} className="text-[14px] leading-relaxed font-bold" style={{ color: "#E5E7EB" }}>
+                {trimmed.replace(/\*\*/g, "")}
+              </p>
+            );
+          }
+
+          if (isHashtag) {
+            // Render inline hashtags with distinct color
+            const parts = line.split(/(\s+#\w+)/g);
+            return (
+              <p key={i} className="text-[13px] leading-relaxed" style={{ color: "rgba(168,85,247,0.75)" }}>
+                {parts.map((part, pi) =>
+                  part.startsWith("#") ? (
+                    <span key={pi} className="hover:underline cursor-pointer" style={{ color: "#A855F7" }}>{part}</span>
+                  ) : (
+                    <span key={pi}>{part}</span>
+                  )
+                )}
+              </p>
+            );
+          }
+
+          if (isMention) {
+            return (
+              <p key={i} className="text-[14px] leading-relaxed" style={{ color: "rgba(99,102,241,0.85)" }}>
+                {line}
+              </p>
+            );
+          }
+
+          // Default body text
+          return (
+            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#E5E7EB" }}>
+              {line}
+            </p>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // ─── Script Output ───
-type ScriptSection = { label: string; color: string; bgColor: string; lines: string[] };
+// Each parsed item has a type so we can style it distinctly
+type ScriptItem =
+  | { kind: "timestamp"; text: string }
+  | { kind: "scene"; text: string }
+  | { kind: "hook"; text: string }
+  | { kind: "cta"; text: string }
+  | { kind: "body"; text: string }
+  | { kind: "divider"; label: string };
 
-function parseScriptSections(content: string): ScriptSection[] {
+function parseScriptItems(content: string): ScriptItem[] {
   const rawLines = content.split("\n");
-  const sections: ScriptSection[] = [];
-  let currentSection: ScriptSection | null = null;
+  const items: ScriptItem[] = [];
+  let i = 0;
 
-  for (let i = 0; i < rawLines.length; i++) {
-    const rawLine = rawLines[i];
-    const line = rawLine.trim();
+  while (i < rawLines.length) {
+    const line = rawLines[i].trim();
+    i++;
 
-    // Empty line — skip but don't change section
     if (!line) continue;
 
-    // Standalone timestamp line (no content after/before it)
+    // ── Timestamp: [0:00] or [0:00] standalone ──
     const tsMatch = line.match(/^\[(\d+:\d+)\]$/);
-    if (tsMatch) continue; // skip bare timestamps
+    if (tsMatch) {
+      items.push({ kind: "timestamp", text: tsMatch[1] });
+      continue;
+    }
 
-    // Section label line (just "HOOK", "BODY", "CTA", etc. with optional punctuation)
-    const labelMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO)([:.\-]|\s*$)/i);
+    // ── Scene/direction cue in brackets ──
+    if (/^\[.+\]$/.test(line)) {
+      const clean = line.slice(1, -1).trim();
+      // Skip if it's just a section label disguised as a scene cue
+      if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*$/i.test(clean)) continue;
+      items.push({ kind: "scene", text: clean });
+      continue;
+    }
+
+    // ── Standalone section label: "HOOK" or "CTA:" etc. ──
+    const labelMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]?\s*$/i);
     if (labelMatch) {
       const label = labelMatch[1].toUpperCase();
-      if (label === "HOOK") {
-        currentSection = { label: "Hook", color: "#A855F7", bgColor: "rgba(124,58,237,0.06)", lines: [] };
-      } else if (label === "CTA") {
-        currentSection = { label: "Call to Action", color: "#10B981", bgColor: "rgba(16,185,129,0.06)", lines: [] };
+      if (label === "CTA") {
+        items.push({ kind: "divider", label: "Call to Action" });
+      } else if (label === "HOOK") {
+        items.push({ kind: "divider", label: "Hook" });
+      } else if (label === "INTRO" || label === "OUTRO") {
+        items.push({ kind: "divider", label });
       } else {
-        currentSection = { label, color: "#8B5CF6", bgColor: "rgba(139,92,246,0.04)", lines: [] };
+        items.push({ kind: "divider", label: "Body" });
       }
-      // Strip the label from the line — anything after it is content
-      const rest = line.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO)[:.\-]\s*/i, "").trim();
-      if (rest) currentSection.lines.push(rest);
-      sections.push(currentSection);
       continue;
     }
 
-    // Line that starts with a section label prefix
-    const prefixMatch = line.match(/^(HOOK|BODY|CTA)[:\s]+(.+)/i);
-    if (prefixMatch) {
-      const label = prefixMatch[1].toUpperCase();
-      const text = prefixMatch[2].trim();
-      if (label === "HOOK") {
-        currentSection = { label: "Hook", color: "#A855F7", bgColor: "rgba(124,58,237,0.06)", lines: text ? [text] : [] };
-      } else if (label === "CTA") {
-        currentSection = { label: "Call to Action", color: "#10B981", bgColor: "rgba(16,185,129,0.06)", lines: text ? [text] : [] };
+    // ── Label with content on same line: "HOOK: You won't believe..." ──
+    const labelContentMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*(.+)/i);
+    if (labelContentMatch) {
+      const label = labelContentMatch[1].toUpperCase();
+      const text = labelContentMatch[2].trim();
+      if (label === "CTA") {
+        if (text) items.push({ kind: "cta", text });
+      } else if (label === "HOOK") {
+        if (text) items.push({ kind: "hook", text });
       } else {
-        currentSection = { label, color: "#8B5CF6", bgColor: "rgba(139,92,246,0.04)", lines: text ? [text] : [] };
+        if (text) items.push({ kind: "body", text });
       }
-      sections.push(currentSection);
       continue;
     }
 
-    // Camera/scene directions in brackets — treat as regular body text
-    const sceneClean = line.replace(/^\[|\]$/g, "").trim();
-    if (/^\[/.test(line) && !tsMatch) {
-      // It's a scene cue — show it as readable text
-      if (!currentSection) {
-        currentSection = { label: "Script", color: "#8B5CF6", bgColor: "rgba(139,92,246,0.04)", lines: [] };
-        sections.push(currentSection);
-      }
-      currentSection.lines.push(sceneClean);
+    // ── Everything else: read the original line for true content ──
+    // Re-read original (not trimmed/stripped) line to preserve original casing
+    const origLine = rawLines[i - 1].trim();
+    // Strip any leftover label prefix from the raw line
+    const stripped = origLine.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*/i, "").trim();
+
+    if (!stripped) continue;
+
+    // Detect CTA patterns: ask audience, subscribe, follow, link in bio, comment, share
+    const isCTA = /\b(subscribe|follow|comment|share|save|link in bio|like|hit|check out|visit|tap|dm|tag)\b/i.test(stripped);
+    if (isCTA) {
+      items.push({ kind: "cta", text: stripped });
       continue;
     }
 
-    // Regular content line — add to current section
-    if (!currentSection) {
-      // No section detected yet — default to "Script" section
-      currentSection = { label: "Script", color: "#8B5CF6", bgColor: "rgba(139,92,246,0.04)", lines: [] };
-      sections.push(currentSection);
+    // Detect hook patterns: bold statements, questions, stats at start
+    const isHook = /^(did you|what if|i tried|i spent|i make|i'll show|here'?s|you'?ll never|this is|stop|stuck|can'?t believe)/i.test(stripped)
+      || /(!{2,}|[\d,]+[\s\w]+(?:people|views|followers|subscribers)|^\d+%|\$[\d,]+k?)/.test(stripped)
+      || (stripped.length < 80 && /^[A-Z]/.test(stripped));
+    if (isHook) {
+      items.push({ kind: "hook", text: stripped });
+      continue;
     }
-    currentSection.lines.push(line);
+
+    items.push({ kind: "body", text: stripped });
   }
 
-  // If we have content but no sections detected, wrap everything in one "Script" section
-  if (sections.length === 0) {
-    const allLines = rawLines.filter((l) => l.trim() !== "").map((l) => l.trim());
-    if (allLines.length > 0) {
-      sections.push({ label: "Script", color: "#8B5CF6", bgColor: "rgba(139,92,246,0.04)", lines: allLines });
-    }
-  }
-
-  return sections;
+  return items;
 }
 
 function ScriptOutput({ content }: { content: string }) {
-  const sections = parseScriptSections(content);
+  const items = parseScriptItems(content);
   const totalChars = content.length;
 
-  // Fallback: if parsing produced nothing, just show raw content
-  if (sections.length === 0 || sections.every((s) => s.lines.length === 0)) {
+  // Fallback: if nothing parsed, render raw lines as plain readable body
+  if (items.length === 0) {
+    const rawLines = content.split("\n").filter((l) => l.trim());
+    if (rawLines.length === 0) return null;
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-4">
@@ -232,49 +471,120 @@ function ScriptOutput({ content }: { content: string }) {
           <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
           <CopyBtn text={content} label="Copy" />
         </div>
-        {content.split("\n").filter((l) => l.trim()).map((line, i) => (
-          <p key={i} className="text-[15px] text-[#E5E7EB] leading-relaxed">{line}</p>
+        {rawLines.map((line, i) => (
+          <div key={i} className="group flex items-start gap-3 py-1.5">
+            <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(139,92,246,0.5)" }} />
+            <span className="text-[15px] text-[#E5E7EB] leading-relaxed">{line.trim()}</span>
+          </div>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-1">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mb-5">
         <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
         <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-        <CopyBtn text={content} label="Copy" />
+        <CopyBtn text={content} label="Copy Script" />
       </div>
 
-      {/* Sections */}
-      {sections.map((section, si) => (
-        <div key={si} className="space-y-2">
-          {/* Section label */}
-          <div className="flex items-center gap-2">
-            <div className="h-px flex-1" style={{ background: `${section.color}20` }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest px-2" style={{ color: section.color }}>{section.label}</span>
-            <div className="h-px flex-1" style={{ background: `${section.color}20` }} />
-          </div>
+      {/* Script items */}
+      <div className="space-y-2">
+        {items.map((item, i) => {
+          // ── Section divider ──
+          if (item.kind === "divider") {
+            const colors: Record<string, { dot: string; text: string }> = {
+              Hook: { dot: "#A855F7", text: "#A855F7" },
+              "Call to Action": { dot: "#10B981", text: "#10B981" },
+              INTRO: { dot: "#6366F1", text: "#818CF8" },
+              OUTRO: { dot: "#F59E0B", text: "#F59E0B" },
+              BODY: { dot: "#8B5CF6", text: "#A78BFA" },
+            };
+            const c = colors[item.label] || { dot: "#8B5CF6", text: "#A78BFA" };
+            return (
+              <div key={i} className="flex items-center gap-3 pt-3">
+                <div className="h-px flex-1" style={{ background: `${c.dot}20` }} />
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ color: c.text, background: `${c.dot}12`, border: `1px solid ${c.dot}25` }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
+                  {item.label}
+                </div>
+                <div className="h-px flex-1" style={{ background: `${c.dot}20` }} />
+              </div>
+            );
+          }
 
-          {/* Lines in section */}
-          <div className="space-y-1.5">
-            {section.lines.map((line, li) => (
-              <div key={li} className="group flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-colors duration-300">
-                {/* Section-colored bullet */}
-                <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: section.color, opacity: 0.6 }} />
-                {/* Line text — always readable */}
-                <span className="text-[15px] text-[#E5E7EB] leading-relaxed flex-1">{line}</span>
-                {/* Copy per line */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
-                  <CopyBtn text={line} />
+          // ── Timestamp badge ──
+          if (item.kind === "timestamp") {
+            return (
+              <div key={i} className="flex items-center gap-3 mt-3">
+                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono flex-shrink-0" style={{ background: "rgba(99,102,241,0.12)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}>
+                  {item.text}
+                </span>
+                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.25), transparent)" }} />
+              </div>
+            );
+          }
+
+          // ── Scene / direction cue ──
+          if (item.kind === "scene") {
+            return (
+              <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg" style={{ background: "rgba(168,85,247,0.06)" }}>
+                <span className="text-[11px] mt-0.5 flex-shrink-0">🎬</span>
+                <span className="text-[12px] italic leading-relaxed" style={{ color: "rgba(168,85,247,0.7)" }}>{item.text}</span>
+              </div>
+            );
+          }
+
+          // ── Hook card ──
+          if (item.kind === "hook") {
+            return (
+              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.25)", color: "#A855F7" }}>⚡</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hook</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-[15px] text-[#FAFAFA] font-semibold leading-relaxed flex-1">{item.text}</span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                    <CopyBtn text={item.text} />
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ))}
+            );
+          }
+
+          // ── CTA card ──
+          if (item.kind === "cta") {
+            return (
+              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-[15px] text-[#10B981] font-medium leading-relaxed flex-1">{item.text}</span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                    <CopyBtn text={item.text} />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // ── Body line ──
+          return (
+            <div key={i} className="group flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-white/[0.02] transition-colors duration-300">
+              <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(139,92,246,0.45)" }} />
+              <span className="text-[15px] text-[#D1D5DB] leading-relaxed flex-1">{item.text}</span>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                <CopyBtn text={item.text} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
