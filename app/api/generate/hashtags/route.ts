@@ -13,28 +13,26 @@ export async function POST(req: NextRequest) {
     }
 
     const platformContext: Record<string, string> = {
-      instagram: "Instagram — mix of broad reach (#fitness) and niche (#fitnessmotivation2024), up to 30 hashtags",
-      youtube: "YouTube — fewer, more targeted tags (YouTube Shorts style: #shorts #topic #niche)",
-      tiktok: "TikTok — trendy, platform-specific, mix of viral tags (#fyp #foryou) and niche",
+      instagram: "Instagram — mix of broad reach and niche, max 30 hashtags",
+      youtube: "YouTube — targeted tags for Shorts (#shorts style)",
+      tiktok: "TikTok — trendy viral tags + niche",
     };
 
     const profileContext = buildCreatorContext(creatorProfile);
 
-    const prompt = `You are a social media hashtag strategist. Generate ${count} relevant hashtags for ${platform} content about: "${topic}".
+    // Strict prompt: output exactly the count, space-separated hashtags
+    const prompt = `Generate exactly ${count} relevant hashtags for ${platform} content about: "${topic}".
 ${profileContext}
+Platform: ${platformContext[platform] || platform}
 
-Platform context: ${platformContext[platform] || platform}
-
-Rules:
-- Mix of popular (#fitness) and niche (#morningroutine2024) tags
-- Include 2-3 trending/evergreen tags for the platform
-- Hashtags should be specific to the topic, not generic
-- Format as space-separated hashtags: #tag1 #tag2 #tag3
-- Do NOT add any explanation or preamble
-- Return ONLY the hashtags
-
-Output format (just hashtags, nothing else):
-#tag1 #tag2 #tag3...`;
+Output rules — FOLLOW EXACTLY:
+- Output exactly ${count} hashtags, space-separated on ONE line
+- Format: #tag1 #tag2 #tag3 (space-separated, NOT comma-separated)
+- Mix: 8 popular tags (1M+ posts) + 7 medium niche tags + 5 ultra-specific tags
+- For tiktok: include 2-3 trending tags like #fyp #foryoupage #viral
+- For youtube: use #shorts as last tag
+- NO explanation, NO labels, NO preamble, NO numbering
+- Output ONLY the hashtags on one line`;
 
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 150);
     const rawText = extractText(response);
@@ -43,10 +41,12 @@ Output format (just hashtags, nothing else):
       throw new Error("AI returned an empty response. Please try again.");
     }
 
+    // Normalize: extract only valid hashtags
     const hashtags = rawText
-      .split(/[\s,]+/)
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.startsWith("#"));
+      .split(/[\s,\n]+/)
+      .map((tag) => tag.trim().toLowerCase())
+      .filter((tag) => tag.startsWith("#") && tag.length > 1)
+      .slice(0, 30); // cap at 30
 
     if (hashtags.length === 0) {
       throw new Error("Could not parse hashtags. Please try again.");

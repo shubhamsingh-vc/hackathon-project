@@ -231,72 +231,71 @@ function parseScriptBlocks(content: string): ScriptBlock[] {
   const rawLines = content.split("\n");
   const result: ScriptBlock[] = [];
 
-  // Normalize: strip common AI formatting artifacts
-  const lines = rawLines.map((l) => l.replace(/^(HOOK|BODY|CTA|SCRIPT)[:\s]*/i, "").trim()).filter((l) => l !== "");
+  // State machine: tracks current section to type following content
+  let section: "none" | "hook" | "body" | "cta" = "body";
 
-  let i = 0;
-  let phase: "hook" | "body" | "cta" = "hook";
+  for (let i = 0; i < rawLines.length; i++) {
+    const rawLine = rawLines[i];
+    const line = rawLine.trim();
 
-  while (i < lines.length) {
-    const line = lines[i];
-    const remaining = lines.slice(i + 1).filter((l) => l.trim());
+    if (!line) { result.push({ type: "body", text: "" }); continue; }
+
+    // Section labels in brackets: [HOOK], [BODY], [CTA]
+    const bracketLabel = line.match(/^\[(HOOK|BODY|CTA)\]$/i);
+    if (bracketLabel) {
+      const label = bracketLabel[1].toUpperCase();
+      if (label === "HOOK") {
+        result.push({ type: "section-heading", text: "⚡ Hook" });
+        section = "hook";
+      } else if (label === "BODY") {
+        result.push({ type: "section-heading", text: "Body" });
+        section = "body";
+      } else if (label === "CTA") {
+        result.push({ type: "section-heading", text: "→ Call to Action" });
+        section = "cta";
+      }
+      continue;
+    }
+
+    // Section labels without brackets: HOOK: BODY: CTA:
+    const plainLabel = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:\-]?\s*/i);
+    if (plainLabel) {
+      const label = plainLabel[1].toUpperCase();
+      if (label === "HOOK") {
+        result.push({ type: "section-heading", text: "⚡ Hook" });
+        section = "hook";
+      } else if (label === "CTA") {
+        result.push({ type: "section-heading", text: "→ Call to Action" });
+        section = "cta";
+      } else {
+        result.push({ type: "section-heading", text: label.charAt(0) + label.slice(1).toLowerCase() });
+        section = "body";
+      }
+      continue;
+    }
 
     // Timestamp line
     const tsMatch = line.match(/^\[(\d+:\d+)\]/);
     if (tsMatch) {
       result.push({ type: "timestamp", text: tsMatch[1], timestamp: tsMatch[1] });
-      i++;
       continue;
     }
 
-    // Scene / direction cue
-    if (/^\[|^🎬|^\(.*\)$/.test(line)) {
-      const clean = line.replace(/^\[|\]$/g, "");
-      if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)/i.test(clean)) {
-        result.push({ type: "section-heading", text: clean });
-      } else {
-        result.push({ type: "scene", text: clean });
-      }
-      i++;
+    // Scene / direction cue in brackets
+    if (/^\[/.test(line)) {
+      const clean = line.replace(/^\[|\]$/g, "").trim();
+      if (clean) result.push({ type: "scene", text: clean });
       continue;
     }
 
-    // Section headings
-    if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)[:\s]/i.test(line)) {
-      const heading = line.replace(/^([^:]+):.*/i, "$1").trim();
-      result.push({ type: "section-heading", text: heading });
-      i++;
-      continue;
-    }
-
-    // CTA — last 2 lines without brackets
-    if (remaining.length <= 1 && !line.startsWith("[")) {
-      if (phase !== "cta") {
-        result.push({ type: "section-heading", text: "Call to Action" });
-        phase = "cta";
-      }
-      result.push({ type: "cta", text: line });
-      i++;
-      continue;
-    }
-
-    // Hook — first non-timestamp, non-scene lines
-    if (phase === "hook") {
-      result.push({ type: "section-heading", text: "Hook" });
+    // Content lines — typed by current section state
+    if (section === "hook") {
       result.push({ type: "hook", text: line });
-      phase = "body";
-      i++;
-      continue;
-    }
-
-    // Body — everything in the middle
-    if (phase === "body") {
+    } else if (section === "cta") {
+      result.push({ type: "cta", text: line });
+    } else {
       result.push({ type: "body", text: line });
-      i++;
-      continue;
     }
-
-    i++;
   }
 
   return result;
