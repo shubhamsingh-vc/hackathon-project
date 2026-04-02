@@ -9,37 +9,15 @@ type CreatorProfile = {
   goals: string[];
 };
 
-const AUDIENCE_OPTIONS = [
-  "Women 18-34",
-  "Men 18-34",
-  "Gen Z (13-26)",
-  "Millennials (27-42)",
-  "Gen X (43-58)",
-  "Seniors 58+",
-  "Teenagers",
-  "College Students",
-  "Working Professionals",
-  "Busy Moms",
-  "Dads",
-  "Entrepreneurs",
-  "Fitness Enthusiasts",
-  "Beauty & Fashion Lovers",
-  "Foodies",
-  "Tech Lovers",
-  "Gamers",
-  "Travelers",
-  "Parents",
-  "Small Business Owners",
-  "Creators & Influencers",
-  "Students",
-  "Remote Workers",
-  "Health & Wellness Seekers",
-  "DIY & Crafters",
-  "Pet Owners",
-  "Book Lovers",
-  "Music Lovers",
-  "Parents of Toddlers",
-  "Parents of Teens",
+const AGE_RANGES = [
+  "13-17",
+  "18-24",
+  "25-34",
+  "35-44",
+  "45-54",
+  "55-64",
+  "65+",
+  "All Ages",
 ];
 
 const NICHES = [
@@ -134,7 +112,6 @@ export default function GeneratorForm() {
   const [nicheSearch, setNicheSearch] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
   const [audienceOpen, setAudienceOpen] = useState(false);
-  const [audienceSearch, setAudienceSearch] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -145,11 +122,6 @@ export default function GeneratorForm() {
     n.label.toLowerCase().includes(nicheSearch.toLowerCase())
   );
 
-  // Filtered audience for search
-  const filteredAudience = AUDIENCE_OPTIONS.filter((a) =>
-    a.toLowerCase().includes(audienceSearch.toLowerCase())
-  );
-
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -158,7 +130,6 @@ export default function GeneratorForm() {
         setNicheOpen(false);
         setNicheSearch("");
         setAudienceOpen(false);
-        setAudienceSearch("");
       }
     };
     document.addEventListener("click", handler);
@@ -448,7 +419,7 @@ export default function GeneratorForm() {
           {/* Target Audience */}
           <div className="audience-dropdown relative">
             <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
-              Target Audience
+              Target Audience Age
             </label>
 
             {/* Trigger */}
@@ -465,9 +436,9 @@ export default function GeneratorForm() {
               style={audienceOpen ? { boxShadow: "0 0 20px rgba(124,58,237,0.2)" } : {}}
             >
               {targetAudience ? (
-                <span className="text-[14px] text-[#FAFAFA] font-medium">{targetAudience}</span>
+                <span className="text-[14px] text-[#FAFAFA] font-medium">Age {targetAudience}</span>
               ) : (
-                <span className="text-[14px] text-[#6B7280]">Select your audience...</span>
+                <span className="text-[14px] text-[#6B7280]">Select age range...</span>
               )}
               <svg
                 width="14"
@@ -494,59 +465,33 @@ export default function GeneratorForm() {
                   boxShadow: "0 0 40px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.1)",
                 }}
               >
-                {/* Search */}
-                <div className="p-3 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input
-                      type="text"
-                      value={audienceSearch}
-                      onChange={(e) => setAudienceSearch(e.target.value)}
-                      placeholder="Search audience..."
-                      className="flex-1 bg-transparent text-[13px] text-[#E5E7EB] placeholder-[#4B5563] outline-none"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                {/* Options */}
-                <div className="max-h-52 overflow-y-auto py-2">
-                  {filteredAudience.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-[13px] text-[#6B7280]">
-                      No results found
-                    </div>
-                  ) : (
-                    filteredAudience.map((option, i) => {
-                      const isSelected = targetAudience === option;
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => {
-                            setTargetAudience(option);
-                            setAudienceOpen(false);
-                            setAudienceSearch("");
-                          }}
-                          className={`
-                            w-full flex items-center justify-between px-4 py-2.5 transition-all duration-200 cursor-pointer
-                            ${isSelected ? "bg-[rgba(124,58,237,0.12)]" : "hover:bg-white/[0.04]"}
-                          `}
-                        >
-                          <span className={`text-[14px] ${isSelected ? "text-white font-medium" : "text-[#9CA3AF]"}`}>
-                            {option}
-                          </span>
-                          {isSelected && (
-                            <svg className="flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
+                <div className="p-2">
+                  {AGE_RANGES.map((range) => {
+                    const isSelected = targetAudience === range;
+                    return (
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => {
+                          setTargetAudience(range);
+                          setAudienceOpen(false);
+                        }}
+                        className={`
+                          w-full flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer
+                          ${isSelected ? "bg-[rgba(124,58,237,0.15)]" : "hover:bg-white/[0.04]"}
+                        `}
+                      >
+                        <span className={`text-[14px] ${isSelected ? "text-white font-medium" : "text-[#9CA3AF]"}`}>
+                          {range}
+                        </span>
+                        {isSelected && (
+                          <svg className="flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
