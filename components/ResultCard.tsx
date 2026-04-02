@@ -19,6 +19,54 @@ interface ResultCardProps {
   onRegenerate?: (newContent: string | string[]) => void;
 }
 
+// ─── Shimmer Gradient Border wrapper ───
+function ShimmerBorder({ accent, children }: { accent: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden"
+      style={{
+        background: "#0A0A0A",
+        boxShadow: `0 0 0 1px ${accent}15, 0 8px 40px rgba(0,0,0,0.6), 0 0 60px ${accent}08`,
+      }}
+    >
+      {/* Animated shimmer line at top */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[2px] z-10"
+        style={{
+          background: `linear-gradient(90deg, transparent 0%, ${accent}60 40%, ${accent} 50%, ${accent}60 60%, transparent 100%)`,
+          backgroundSize: "200% 100%",
+          animation: "shimmer 2.5s ease-in-out infinite",
+        }}
+      />
+      {/* Bottom glow */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px z-10"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}20, transparent)` }}
+      />
+      {/* Corner accent dots */}
+      <div
+        className="absolute top-0 left-0 w-16 h-16 z-10 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 0% 0%, ${accent}30 0%, transparent 70%)`,
+        }}
+      />
+      <div
+        className="absolute top-0 right-0 w-16 h-16 z-10 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, ${accent}30 0%, transparent 70%)`,
+        }}
+      />
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}</style>
+      <div className="relative z-[1]">{children}</div>
+    </div>
+  );
+}
+
 // ─── Reusable Copy Button ───
 function CopyBtn({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -41,7 +89,9 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
       type="button"
       onClick={handleCopy}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
-        copied ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+        copied
+          ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]"
+          : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 hover:bg-white/8"
       }`}
     >
       {copied ? (
@@ -57,12 +107,12 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedTag, setCopiedTag] = useState<string | null>(null);
 
-  // Classify hashtags: trending (short, generic), niche (specific, longer)
   const categorize = (tag: string) => {
     const t = tag.toLowerCase();
-    const trending = ["#fyp", "#foryou", "#foryoupage", "#viral", "#trending", "#explore", "#reels", "#shorts", "#tiktok"];
-    if (trending.some((tr) => t.includes(tr.replace("#", "")))) return "trending";
+    const trending = ["fyp", "foryou", "foryoupage", "viral", "trending", "explore", "reels", "shorts", "tiktok", "fypシ", "シ"];
+    if (trending.some((tr) => t.includes(tr))) return "trending";
     if (tag.length > 16) return "niche";
     return "regular";
   };
@@ -71,36 +121,55 @@ function HashtagsOutput({ content }: { content: string[] }) {
   const niche = content.filter((t) => categorize(t) === "niche");
   const regular = content.filter((t) => categorize(t) === "regular");
 
+  const catMeta: Record<string, { accent: string; bg: string; label: string; icon: string }> = {
+    trending: { accent: "#F87171", bg: "rgba(239,68,68,0.07)", label: "Trending", icon: "🔥" },
+    regular: { accent: "#A855F7", bg: "rgba(168,85,247,0.07)", label: "Popular", icon: "⭐" },
+    niche: { accent: "#34D399", bg: "rgba(16,185,129,0.07)", label: "Niche", icon: "🎯" },
+  };
+
   const TagBadge = ({ tag }: { tag: string }) => {
     const cat = categorize(tag);
-    const styles: Record<string, { bg: string; border: string; color: string; shadow: string }> = {
-      trending: { bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", color: "#F87171", shadow: "0 0 12px rgba(239,68,68,0.15)" },
-      niche: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", color: "#34D399", shadow: "0 0 12px rgba(16,185,129,0.15)" },
-      regular: { bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.2)", color: "#A855F7", shadow: "0 0 12px rgba(168,85,247,0.15)" },
-    };
-    const s = styles[cat];
+    const meta = catMeta[cat];
+    const isCopied = copiedTag === tag;
 
     return (
       <button
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(tag); }}
-        className="group relative px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigator.clipboard.writeText(tag);
+          setCopiedTag(tag);
+          setTimeout(() => setCopiedTag(null), 1500);
+        }}
+        className="relative px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap"
         style={{
-          background: s.bg,
-          border: `1px solid ${s.border}`,
-          color: s.color,
+          background: meta.bg,
+          border: `1px solid ${meta.accent}30`,
+          color: meta.accent,
+          boxShadow: `0 0 0 0 ${meta.accent}00`,
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = s.shadow;
-          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+          const el = e.currentTarget as HTMLButtonElement;
+          el.style.boxShadow = `0 0 16px ${meta.accent}25, 0 4px 12px rgba(0,0,0,0.4)`;
+          el.style.transform = "translateY(-2px) scale(1.02)";
+          el.style.borderColor = `${meta.accent}50`;
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+          const el = e.currentTarget as HTMLButtonElement;
+          el.style.boxShadow = `0 0 0 0 ${meta.accent}00`;
+          el.style.transform = "translateY(0) scale(1)";
+          el.style.borderColor = `${meta.accent}30`;
         }}
-        title={`Click to copy: ${tag}`}
       >
-        {tag}
+        {isCopied ? (
+          <span className="flex items-center gap-1">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Copied
+          </span>
+        ) : (
+          tag
+        )}
       </button>
     );
   };
@@ -108,144 +177,154 @@ function HashtagsOutput({ content }: { content: string[] }) {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[12px]" style={{ background: "rgba(168,85,247,0.15)", color: "#A855F7" }}>#</span>
-          <span className="text-[11px] font-bold text-[#A855F7] uppercase tracking-wider">Hashtags</span>
-          <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
+      <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px] font-bold"
+            style={{
+              background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.08))",
+              color: "#A855F7",
+              border: "1px solid rgba(168,85,247,0.2)",
+              boxShadow: "0 0 20px rgba(168,85,247,0.15)",
+            }}
+          >
+            #
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hashtags</div>
+            <div className="text-[11px] text-[#6B7280]">{content.length} tags · tap to copy</div>
+          </div>
         </div>
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 ${
-            copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-300 ${
+            copiedAll
+              ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
+              : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
           }`}
         >
-          {copiedAll ? "✓ Copied!" : "Copy All"}
+          {copiedAll ? (
+            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
+          ) : (
+            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
+          )}
         </button>
       </div>
 
-      {/* Trending */}
-      {trending.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#F87171" }} />
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#F87171" }}>Trending</span>
+      {/* Tag Groups */}
+      {(["trending", "regular", "niche"] as const).map((cat) => {
+        const tags = cat === "trending" ? trending : cat === "regular" ? regular : niche;
+        if (tags.length === 0) return null;
+        const meta = catMeta[cat];
+        return (
+          <div key={cat} className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[13px]">{meta.icon}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</span>
+              <div className="flex-1 h-px" style={{ background: `${meta.accent}15` }} />
+              <span className="text-[10px] font-mono" style={{ color: `${meta.accent}60` }}>{tags.length}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, i) => <TagBadge key={i} tag={tag} />)}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {trending.map((tag, i) => <TagBadge key={i} tag={tag} />)}
-          </div>
-        </div>
-      )}
-
-      {/* Regular */}
-      {regular.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#A855F7" }} />
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#A855F7" }}>Popular</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {regular.map((tag, i) => <TagBadge key={i} tag={tag} />)}
-          </div>
-        </div>
-      )}
-
-      {/* Niche */}
-      {niche.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#34D399" }} />
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#34D399" }}>Niche</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {niche.map((tag, i) => <TagBadge key={i} tag={tag} />)}
-          </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
 
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
-  const hookTypes = [
-    { label: "Story Hook", icon: "📖", accent: "#A855F7", bg: "rgba(124,58,237,0.08)", border: "rgba(124,58,237,0.2)" },
-    { label: "Stat Hook", icon: "📊", accent: "#F59E0B", bg: "rgba(245,158,11,0.06)", border: "rgba(245,158,11,0.2)" },
-    { label: "Question Hook", icon: "❓", accent: "#10B981", bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.2)" },
-    { label: "Bold Hook", icon: "🔥", accent: "#EF4444", bg: "rgba(239,68,68,0.06)", border: "rgba(239,68,68,0.2)" },
+  const hookMeta = [
+    { label: "Story Hook", icon: "📖", accent: "#A855F7", glow: "rgba(168,85,247,0.25)", bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.15)" },
+    { label: "Stat Hook", icon: "📊", accent: "#F59E0B", glow: "rgba(245,158,11,0.25)", bg: "rgba(245,158,11,0.05)", border: "rgba(245,158,11,0.15)" },
+    { label: "Question Hook", icon: "❓", accent: "#10B981", glow: "rgba(16,185,129,0.25)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
+    { label: "Bold Hook", icon: "🔥", accent: "#EF4444", glow: "rgba(239,68,68,0.25)", bg: "rgba(239,68,68,0.05)", border: "rgba(239,68,68,0.15)" },
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.08)" }}>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-[#A855F7]">Viral Hooks</div>
+        <div className="flex-1 h-px" style={{ background: "rgba(168,85,247,0.08)" }} />
+        <span className="text-[10px] text-[#6B7280]">{content.length} options</span>
+      </div>
+
       {content.map((hook, i) => {
-        const hookMeta = hookTypes[i % hookTypes.length];
-        const isQuestion = hook.includes("?");
-        const hasStat = /\d+%|\d+K|\$\d/.test(hook);
-        const hasExclamation = hook.includes("!") && hook.split("!").length > 2;
+        const meta = hookMeta[i % hookMeta.length];
 
         return (
           <div
             key={i}
-            className="group relative rounded-2xl p-5 transition-all duration-500"
+            className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
             style={{
-              background: hookMeta.bg,
-              border: `1px solid ${hookMeta.border}`,
+              background: `linear-gradient(135deg, ${meta.bg}, transparent)`,
+              border: `1px solid ${meta.border}`,
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = `${hookMeta.accent}50`;
-              (e.currentTarget as HTMLDivElement).style.background = hookMeta.bg.replace("0.06", "0.12").replace("0.08", "0.14");
+              const el = e.currentTarget as HTMLDivElement;
+              el.style.borderColor = `${meta.accent}40`;
+              el.style.boxShadow = `0 0 30px ${meta.glow}, inset 0 1px 0 ${meta.accent}20`;
+              el.style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = hookMeta.border;
-              (e.currentTarget as HTMLDivElement).style.background = hookMeta.bg;
+              const el = e.currentTarget as HTMLDivElement;
+              el.style.borderColor = meta.border;
+              el.style.boxShadow = "none";
+              el.style.transform = "translateY(0)";
             }}
           >
+            {/* Ambient glow at bottom-left */}
+            <div
+              className="absolute bottom-0 left-0 w-32 h-32 rounded-full pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, ${meta.glow} 0%, transparent 70%)`,
+                opacity: 0.5,
+              }}
+            />
+
             {/* Header row */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-[14px] font-bold"
-                  style={{ background: `${hookMeta.accent}20`, color: hookMeta.accent }}
-                >
-                  {hookMeta.icon}
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: hookMeta.accent }}>
-                  {hookMeta.label}
-                </span>
-                <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px]"
                   style={{
-                    background: `${hookMeta.accent}15`,
-                    color: hookMeta.accent,
-                    border: `1px solid ${hookMeta.accent}30`,
+                    background: `linear-gradient(135deg, ${meta.accent}25, ${meta.accent}10)`,
+                    color: meta.accent,
+                    border: `1px solid ${meta.accent}30`,
+                    boxShadow: `0 0 15px ${meta.accent}20`,
                   }}
                 >
-                  #{i + 1}
-                </span>
+                  {meta.icon}
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</div>
+                  <div className="text-[10px] text-[#6B7280] font-mono">#{i + 1}</div>
+                </div>
               </div>
               <CopyBtn text={hook} />
             </div>
 
-            {/* Hook text — styled by type */}
+            {/* Hook text — large, glowing */}
             <p
-              className="text-[15px] leading-relaxed font-semibold"
+              className="text-[16px] leading-relaxed font-semibold relative z-10 pr-6"
               style={{
-                color: hookMeta.accent,
-                textShadow: `0 0 30px ${hookMeta.accent}20`,
+                color: meta.accent,
+                textShadow: `0 0 40px ${meta.glow}, 0 0 2px ${meta.accent}50`,
               }}
             >
               {hook}
             </p>
 
-            {/* Bottom accent line */}
+            {/* Hover reveal: gradient overlay at bottom */}
             <div
-              className="absolute bottom-0 left-6 right-6 h-px rounded-full transition-opacity duration-500"
+              className="absolute inset-x-0 bottom-0 h-8 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
               style={{
-                background: `linear-gradient(90deg, transparent, ${hookMeta.accent}40, transparent)`,
-                opacity: 0,
+                background: `linear-gradient(to top, ${meta.bg}, transparent)`,
               }}
-              id={`hook-accent-${i}`}
             />
           </div>
         );
@@ -263,36 +342,52 @@ function CaptionOutput({ content }: { content: string }) {
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-5 pb-4" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[12px]" style={{ background: "rgba(99,102,241,0.15)", color: "#818CF8" }}>✍</span>
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6366F1" }}>Caption</span>
+      <div className="flex items-center gap-4 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[14px]"
+            style={{
+              background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.06))",
+              color: "#818CF8",
+              border: "1px solid rgba(99,102,241,0.2)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.15)",
+            }}
+          >
+            ✍
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#6366F1" }}>Caption</div>
+            <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
+          </div>
         </div>
-        <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-        {isLongForm && (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[rgba(99,102,241,0.1)] text-[#818CF8] border border-[rgba(99,102,241,0.2)]">
-            Long Form
-          </span>
-        )}
-        <div className="ml-auto">
-          <CopyBtn text={content} label="Copy Caption" />
+        <div className="ml-auto flex items-center gap-2">
+          {isLongForm && (
+            <span
+              className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
+            >
+              Long Form
+            </span>
+          )}
+          <CopyBtn text={content} label="Copy" />
         </div>
       </div>
 
       {/* Caption lines */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {lines.map((line, i) => {
           const trimmed = line.trim();
-          const isEmoji = /^[\p{Emoji}\s]+$/u.test(trimmed) && trimmed.length <= 10;
+          const isEmoji = /^[\p{Emoji}\s]+$/u.test(trimmed) && trimmed.length <= 12;
           const isEllipsis = trimmed === "..." || trimmed === "…";
           const isCTA = /\b(link in bio|follow|comment|share|save this|link|bio|dm me|tag a friend|follow for more|subscribe)\b/i.test(trimmed);
-          const isHashtag = trimmed.startsWith("#") || /^\s*#\w/.test(line);
+          const isHashtag = /(^|\s)#\w/.test(line);
           const isMention = /@[\w]+/.test(trimmed);
           const isBold = /^\*\*.+\*\*$/.test(trimmed);
+          const isFirst = i === 0;
 
           if (isEmoji) {
             return (
-              <p key={i} className="text-3xl leading-none py-1" style={{ filter: "drop-shadow(0 0 8px rgba(168,85,247,0.3))" }}>
+              <p key={i} className="text-4xl leading-none" style={{ filter: "drop-shadow(0 0 12px rgba(168,85,247,0.4))" }}>
                 {trimmed}
               </p>
             );
@@ -300,15 +395,21 @@ function CaptionOutput({ content }: { content: string }) {
 
           if (isEllipsis) {
             return (
-              <p key={i} className="text-[14px] text-[#6B7280] text-center py-1 tracking-widest">
-                · · ·
-              </p>
+              <div key={i} className="flex items-center justify-center gap-1 py-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/30" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/20" />
+              </div>
             );
           }
 
           if (isCTA) {
             return (
-              <p key={i} className="text-[14px] leading-relaxed font-semibold" style={{ color: "#10B981", textShadow: "0 0 20px rgba(16,185,129,0.2)" }}>
+              <p
+                key={i}
+                className="text-[14px] leading-relaxed font-semibold"
+                style={{ color: "#10B981", textShadow: "0 0 25px rgba(16,185,129,0.3)", padding: "6px 0" }}
+              >
                 {line}
               </p>
             );
@@ -316,22 +417,21 @@ function CaptionOutput({ content }: { content: string }) {
 
           if (isBold) {
             return (
-              <p key={i} className="text-[14px] leading-relaxed font-bold" style={{ color: "#E5E7EB" }}>
+              <p key={i} className="text-[15px] leading-relaxed font-bold" style={{ color: "#FAFAFA" }}>
                 {trimmed.replace(/\*\*/g, "")}
               </p>
             );
           }
 
           if (isHashtag) {
-            // Render inline hashtags with distinct color
-            const parts = line.split(/(\s+#\w+)/g);
+            const parts = line.split(/(\s+#\w+\S*)/g);
             return (
-              <p key={i} className="text-[13px] leading-relaxed" style={{ color: "rgba(168,85,247,0.75)" }}>
+              <p key={i} className="text-[13px] leading-relaxed">
                 {parts.map((part, pi) =>
-                  part.startsWith("#") ? (
-                    <span key={pi} className="hover:underline cursor-pointer" style={{ color: "#A855F7" }}>{part}</span>
+                  part.match(/^\s*#/) ? (
+                    <span key={pi} className="font-semibold" style={{ color: "#A855F7" }}>{part}</span>
                   ) : (
-                    <span key={pi}>{part}</span>
+                    <span key={pi} style={{ color: "rgba(168,85,247,0.5)" }}>{part}</span>
                   )
                 )}
               </p>
@@ -340,15 +440,23 @@ function CaptionOutput({ content }: { content: string }) {
 
           if (isMention) {
             return (
-              <p key={i} className="text-[14px] leading-relaxed" style={{ color: "rgba(99,102,241,0.85)" }}>
+              <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#818CF8" }}>
                 {line}
               </p>
             );
           }
 
-          // Default body text
+          // First line = lead, gets special treatment
+          if (isFirst) {
+            return (
+              <p key={i} className="text-[16px] leading-relaxed font-medium" style={{ color: "#F3F4F6" }}>
+                {line}
+              </p>
+            );
+          }
+
           return (
-            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#E5E7EB" }}>
+            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#D1D5DB" }}>
               {line}
             </p>
           );
@@ -359,7 +467,6 @@ function CaptionOutput({ content }: { content: string }) {
 }
 
 // ─── Script Output ───
-// Each parsed item has a type so we can style it distinctly
 type ScriptItem =
   | { kind: "timestamp"; text: string }
   | { kind: "scene"; text: string }
@@ -376,79 +483,49 @@ function parseScriptItems(content: string): ScriptItem[] {
   while (i < rawLines.length) {
     const line = rawLines[i].trim();
     i++;
-
     if (!line) continue;
 
-    // ── Timestamp: [0:00] or [0:00] standalone ──
     const tsMatch = line.match(/^\[(\d+:\d+)\]$/);
-    if (tsMatch) {
-      items.push({ kind: "timestamp", text: tsMatch[1] });
-      continue;
-    }
+    if (tsMatch) { items.push({ kind: "timestamp", text: tsMatch[1] }); continue; }
 
-    // ── Scene/direction cue in brackets ──
     if (/^\[.+\]$/.test(line)) {
       const clean = line.slice(1, -1).trim();
-      // Skip if it's just a section label disguised as a scene cue
       if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*$/i.test(clean)) continue;
-      items.push({ kind: "scene", text: clean });
-      continue;
+      items.push({ kind: "scene", text: clean }); continue;
     }
 
-    // ── Standalone section label: "HOOK" or "CTA:" etc. ──
     const labelMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]?\s*$/i);
     if (labelMatch) {
       const label = labelMatch[1].toUpperCase();
-      if (label === "CTA") {
-        items.push({ kind: "divider", label: "Call to Action" });
-      } else if (label === "HOOK") {
-        items.push({ kind: "divider", label: "Hook" });
-      } else if (label === "INTRO" || label === "OUTRO") {
-        items.push({ kind: "divider", label });
-      } else {
-        items.push({ kind: "divider", label: "Body" });
-      }
+      if (label === "CTA") items.push({ kind: "divider", label: "Call to Action" });
+      else if (label === "HOOK") items.push({ kind: "divider", label: "Hook" });
+      else if (label === "INTRO" || label === "OUTRO") items.push({ kind: "divider", label });
+      else items.push({ kind: "divider", label: "Body" });
       continue;
     }
 
-    // ── Label with content on same line: "HOOK: You won't believe..." ──
     const labelContentMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*(.+)/i);
     if (labelContentMatch) {
       const label = labelContentMatch[1].toUpperCase();
       const text = labelContentMatch[2].trim();
-      if (label === "CTA") {
-        if (text) items.push({ kind: "cta", text });
-      } else if (label === "HOOK") {
-        if (text) items.push({ kind: "hook", text });
-      } else {
-        if (text) items.push({ kind: "body", text });
-      }
+      if (label === "CTA" && text) items.push({ kind: "cta", text });
+      else if (label === "HOOK" && text) items.push({ kind: "hook", text });
+      else if (text) items.push({ kind: "body", text });
       continue;
     }
 
-    // ── Everything else: read the original line for true content ──
-    // Re-read original (not trimmed/stripped) line to preserve original casing
     const origLine = rawLines[i - 1].trim();
-    // Strip any leftover label prefix from the raw line
     const stripped = origLine.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*/i, "").trim();
-
     if (!stripped) continue;
 
-    // Detect CTA patterns: ask audience, subscribe, follow, link in bio, comment, share
     const isCTA = /\b(subscribe|follow|comment|share|save|link in bio|like|hit|check out|visit|tap|dm|tag)\b/i.test(stripped);
-    if (isCTA) {
-      items.push({ kind: "cta", text: stripped });
-      continue;
-    }
+    if (isCTA) { items.push({ kind: "cta", text: stripped }); continue; }
 
-    // Detect hook patterns: bold statements, questions, stats at start
-    const isHook = /^(did you|what if|i tried|i spent|i make|i'll show|here'?s|you'?ll never|this is|stop|stuck|can'?t believe)/i.test(stripped)
-      || /(!{2,}|[\d,]+[\s\w]+(?:people|views|followers|subscribers)|^\d+%|\$[\d,]+k?)/.test(stripped)
-      || (stripped.length < 80 && /^[A-Z]/.test(stripped));
-    if (isHook) {
-      items.push({ kind: "hook", text: stripped });
-      continue;
-    }
+    const isHook =
+      /^(did you|what if|i tried|i spent|i make|i'll show|here'?s|you'?ll never|this is|stop|stuck|can'?t believe)/i.test(stripped) ||
+      /(!{2,}|[\d,]+[\s\w]+(?:people|views|followers|subscribers)|^\d+%|\$[\d,]+k?)/.test(stripped) ||
+      (stripped.length < 80 && /^[A-Z]/.test(stripped));
+    if (isHook) { items.push({ kind: "hook", text: stripped }); continue; }
 
     items.push({ kind: "body", text: stripped });
   }
@@ -460,34 +537,54 @@ function ScriptOutput({ content }: { content: string }) {
   const items = parseScriptItems(content);
   const totalChars = content.length;
 
-  // Fallback: if nothing parsed, render raw lines as plain readable body
   if (items.length === 0) {
     const rawLines = content.split("\n").filter((l) => l.trim());
     if (rawLines.length === 0) return null;
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(139,92,246,0.15)", color: "#A78BFA" }}>✍</div>
           <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
           <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
           <CopyBtn text={content} label="Copy" />
         </div>
         {rawLines.map((line, i) => (
-          <div key={i} className="group flex items-start gap-3 py-1.5">
-            <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(139,92,246,0.5)" }} />
-            <span className="text-[15px] text-[#E5E7EB] leading-relaxed">{line.trim()}</span>
-          </div>
+          <p key={i} className="text-[15px] text-[#E5E7EB] leading-relaxed">{line.trim()}</p>
         ))}
       </div>
     );
   }
 
+  const dividerMeta: Record<string, { accent: string; bg: string; glow: string; icon: string }> = {
+    Hook: { accent: "#A855F7", bg: "rgba(168,85,247,0.08)", glow: "rgba(168,85,247,0.2)", icon: "⚡" },
+    "Call to Action": { accent: "#10B981", bg: "rgba(16,185,129,0.08)", glow: "rgba(16,185,129,0.2)", icon: "→" },
+    INTRO: { accent: "#6366F1", bg: "rgba(99,102,241,0.06)", glow: "rgba(99,102,241,0.15)", icon: "▶" },
+    OUTRO: { accent: "#F59E0B", bg: "rgba(245,158,11,0.06)", glow: "rgba(245,158,11,0.15)", icon: "■" },
+    Body: { accent: "#8B5CF6", bg: "rgba(139,92,246,0.04)", glow: "rgba(139,92,246,0.1)", icon: "◆" },
+  };
+
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
-        <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-        <CopyBtn text={content} label="Copy Script" />
+      <div className="flex items-center gap-4 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold"
+          style={{
+            background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))",
+            color: "#A78BFA",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 0 20px rgba(139,92,246,0.15)",
+          }}
+        >
+          ✍
+        </div>
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Script</div>
+          <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
+        </div>
+        <div className="ml-auto">
+          <CopyBtn text={content} label="Copy Script" />
+        </div>
       </div>
 
       {/* Script items */}
@@ -495,22 +592,23 @@ function ScriptOutput({ content }: { content: string }) {
         {items.map((item, i) => {
           // ── Section divider ──
           if (item.kind === "divider") {
-            const colors: Record<string, { dot: string; text: string }> = {
-              Hook: { dot: "#A855F7", text: "#A855F7" },
-              "Call to Action": { dot: "#10B981", text: "#10B981" },
-              INTRO: { dot: "#6366F1", text: "#818CF8" },
-              OUTRO: { dot: "#F59E0B", text: "#F59E0B" },
-              BODY: { dot: "#8B5CF6", text: "#A78BFA" },
-            };
-            const c = colors[item.label] || { dot: "#8B5CF6", text: "#A78BFA" };
+            const meta = dividerMeta[item.label] || dividerMeta["Body"];
             return (
-              <div key={i} className="flex items-center gap-3 pt-3">
-                <div className="h-px flex-1" style={{ background: `${c.dot}20` }} />
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ color: c.text, background: `${c.dot}12`, border: `1px solid ${c.dot}25` }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
+              <div key={i} className="flex items-center gap-3 pt-4 pb-1">
+                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${meta.accent}30)` }} />
+                <div
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest"
+                  style={{
+                    color: meta.accent,
+                    background: meta.bg,
+                    border: `1px solid ${meta.accent}30`,
+                    boxShadow: `0 0 20px ${meta.glow}, inset 0 1px 0 ${meta.accent}15`,
+                  }}
+                >
+                  <span className="text-[13px]">{meta.icon}</span>
                   {item.label}
                 </div>
-                <div className="h-px flex-1" style={{ background: `${c.dot}20` }} />
+                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${meta.accent}30, transparent)` }} />
               </div>
             );
           }
@@ -518,21 +616,36 @@ function ScriptOutput({ content }: { content: string }) {
           // ── Timestamp badge ──
           if (item.kind === "timestamp") {
             return (
-              <div key={i} className="flex items-center gap-3 mt-3">
-                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono flex-shrink-0" style={{ background: "rgba(99,102,241,0.12)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}>
+              <div key={i} className="flex items-center gap-3 mt-1">
+                <span
+                  className="px-3 py-1.5 rounded-xl text-[11px] font-bold font-mono flex-shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.06))",
+                    color: "#818CF8",
+                    border: "1px solid rgba(99,102,241,0.25)",
+                    boxShadow: "0 0 15px rgba(99,102,241,0.15)",
+                  }}
+                >
                   {item.text}
                 </span>
-                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.25), transparent)" }} />
+                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.3), transparent)" }} />
               </div>
             );
           }
 
-          // ── Scene / direction cue ──
+          // ── Scene cue ──
           if (item.kind === "scene") {
             return (
-              <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg" style={{ background: "rgba(168,85,247,0.06)" }}>
-                <span className="text-[11px] mt-0.5 flex-shrink-0">🎬</span>
-                <span className="text-[12px] italic leading-relaxed" style={{ color: "rgba(168,85,247,0.7)" }}>{item.text}</span>
+              <div
+                key={i}
+                className="flex items-center gap-3 py-2.5 px-4 rounded-xl my-1"
+                style={{
+                  background: "rgba(168,85,247,0.05)",
+                  border: "1px solid rgba(168,85,247,0.12)",
+                }}
+              >
+                <span className="text-[12px] flex-shrink-0" style={{ filter: "drop-shadow(0 0 4px rgba(168,85,247,0.5))" }}>🎬</span>
+                <span className="text-[12px] italic leading-relaxed" style={{ color: "rgba(168,85,247,0.6)" }}>{item.text}</span>
               </div>
             );
           }
@@ -540,13 +653,31 @@ function ScriptOutput({ content }: { content: string }) {
           // ── Hook card ──
           if (item.kind === "hook") {
             return (
-              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.25)", color: "#A855F7" }}>⚡</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hook</span>
+              <div
+                key={i}
+                className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.04))",
+                  border: "1px solid rgba(168,85,247,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(168,85,247,0.45)";
+                  el.style.boxShadow = "0 0 40px rgba(168,85,247,0.25), inset 0 1px 0 rgba(168,85,247,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(168,85,247,0.2)";
+                  el.style.boxShadow = "none";
+                }}
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(168,85,247,0.15) 0%, transparent 60%)" }} />
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(168,85,247,0.2)", color: "#A855F7", boxShadow: "0 0 12px rgba(168,85,247,0.3)" }}>⚡</div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hook</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-[15px] text-[#FAFAFA] font-semibold leading-relaxed flex-1">{item.text}</span>
+                <div className="flex items-start gap-3 relative z-10">
+                  <span className="text-[15px] text-[#FAFAFA] font-semibold leading-relaxed flex-1" style={{ textShadow: "0 0 30px rgba(168,85,247,0.2)" }}>{item.text}</span>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
                     <CopyBtn text={item.text} />
                   </div>
@@ -558,13 +689,31 @@ function ScriptOutput({ content }: { content: string }) {
           // ── CTA card ──
           if (item.kind === "cta") {
             return (
-              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
+              <div
+                key={i}
+                className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04))",
+                  border: "1px solid rgba(16,185,129,0.18)",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(16,185,129,0.4)";
+                  el.style.boxShadow = "0 0 40px rgba(16,185,129,0.2), inset 0 1px 0 rgba(16,185,129,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(16,185,129,0.18)";
+                  el.style.boxShadow = "none";
+                }}
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(16,185,129,0.12) 0%, transparent 60%)" }} />
+                <div className="flex items-center gap-2 mb-3 relative z-10">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", boxShadow: "0 0 12px rgba(16,185,129,0.2)" }}>→</div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="text-[15px] text-[#10B981] font-medium leading-relaxed flex-1">{item.text}</span>
+                <div className="flex items-start gap-3 relative z-10">
+                  <span className="text-[15px] font-semibold leading-relaxed flex-1" style={{ color: "#10B981", textShadow: "0 0 25px rgba(16,185,129,0.3)" }}>{item.text}</span>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
                     <CopyBtn text={item.text} />
                   </div>
@@ -575,10 +724,26 @@ function ScriptOutput({ content }: { content: string }) {
 
           // ── Body line ──
           return (
-            <div key={i} className="group flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-white/[0.02] transition-colors duration-300">
-              <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(139,92,246,0.45)" }} />
-              <span className="text-[15px] text-[#D1D5DB] leading-relaxed flex-1">{item.text}</span>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+            <div
+              key={i}
+              className="group flex items-start gap-4 py-2.5 px-4 rounded-xl transition-all duration-300"
+              style={{}}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = "rgba(139,92,246,0.04)";
+                el.style.borderRadius = "10px";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = "transparent";
+              }}
+            >
+              <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
+                <span className="w-2 h-2 rounded-full" style={{ background: "rgba(139,92,246,0.4)" }} />
+                <span className="w-px h-3 mt-1" style={{ background: "rgba(139,92,246,0.15)" }} />
+              </div>
+              <span className="text-[15px] text-[#D1D5DB] leading-relaxed flex-1 pt-0.5">{item.text}</span>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
                 <CopyBtn text={item.text} />
               </div>
             </div>
@@ -590,17 +755,7 @@ function ScriptOutput({ content }: { content: string }) {
 }
 
 // ─── Edit Overlay ───
-function EditOverlay({
-  content,
-  type,
-  onSave,
-  onCancel,
-}: {
-  content: string | string[];
-  type: string;
-  onSave: (newContent: string | string[]) => void;
-  onCancel: () => void;
-}) {
+function EditOverlay({ content, type, onSave, onCancel }: { content: string | string[]; type: string; onSave: (newContent: string | string[]) => void; onCancel: () => void }) {
   const isArray = Array.isArray(content);
   const editText = isArray ? content.join("\n") : content;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -626,14 +781,14 @@ function EditOverlay({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#F59E0B", boxShadow: "0 0 6px #F59E0B" }} />
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#F59E0B]">Editing — make your changes below</span>
+        <div className="w-2 h-2 rounded-full" style={{ background: "#F59E0B", boxShadow: "0 0 8px #F59E0B" }} />
+        <span className="text-[11px] font-bold uppercase tracking-widest text-[#F59E0B]">Editing Mode</span>
       </div>
       <textarea
         ref={textareaRef}
         value={draft}
         onChange={(e) => handleChange(e.target.value)}
-        className="w-full bg-[rgba(245,158,11,0.04)] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed font-mono resize-none outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
+        className="w-full bg-[rgba(245,158,11,0.04)] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed resize-none outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
         style={{ minHeight: "200px" }}
         autoFocus
         placeholder={isArray ? "Enter each item on a new line..." : "Edit your content..."}
@@ -641,10 +796,10 @@ function EditOverlay({
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#6B7280]">{draft.length} characters</span>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300">
+          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-xl text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300">
             Cancel
           </button>
-          <button type="button" onClick={handleSave} className="flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-medium bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300">
+          <button type="button" onClick={handleSave} className="flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-semibold bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Save Changes
           </button>
@@ -656,7 +811,7 @@ function EditOverlay({
 
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
-  hook: { label: "Viral Hook", color: "#7C3AED" },
+  hook: { label: "Viral Hook", color: "#A855F7" },
   caption: { label: "Caption", color: "#6366F1" },
   hashtags: { label: "Hashtags", color: "#A855F7" },
   script: { label: "Script", color: "#8B5CF6" },
@@ -671,13 +826,11 @@ export default function ResultCard({ type, content: initialContent, platform, to
   const [saving, setSaving] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  // Sync new content from parent
   if (JSON.stringify(initialContent) !== JSON.stringify(content) && !editing) {
     setContent(initialContent);
   }
 
-  const meta = TYPE_META[type] || { label: type, color: "#7C3AED" };
-
+  const meta = TYPE_META[type] || { label: type, color: "#A855F7" };
   const getFullText = () => Array.isArray(content) ? content.join("\n") : content;
 
   const handleCopyAll = () => {
@@ -723,7 +876,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
 
   return (
     <div>
-      {/* Header */}
+      {/* Meta Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow" style={{ borderColor: `${meta.color}40`, color: meta.color, background: `${meta.color}12` }}>{meta.label}</span>
@@ -738,8 +891,8 @@ export default function ResultCard({ type, content: initialContent, platform, to
             <button
               type="button"
               onClick={handleCopyAll}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
-                copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-500 ${
+                copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]" : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25"
               }`}
             >
               {copiedAll ? (
@@ -752,20 +905,20 @@ export default function ResultCard({ type, content: initialContent, platform, to
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 transition-all duration-500"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
             </button>
 
             {session ? (
-              <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
-                saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+              <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-500 ${
+                saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]" : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25"
               }`}>
                 {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
               </button>
             ) : (
-              <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500">
+              <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 transition-all duration-500">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
               </button>
             )}
@@ -773,28 +926,22 @@ export default function ResultCard({ type, content: initialContent, platform, to
         )}
       </div>
 
-      {/* Content */}
+      {/* Content Card */}
       {editing ? (
-        <div className="bezel-outer mb-6">
-          <div className="bezel-inner">
-            <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #F59E0B80, transparent)" }} />
-            <div className="p-6">
-              <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
-            </div>
+        <ShimmerBorder accent="#F59E0B">
+          <div className="p-7">
+            <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
           </div>
-        </div>
+        </ShimmerBorder>
       ) : (
-        <div className="bezel-outer">
-          <div className="bezel-inner">
-            <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${meta.color}80, transparent)` }} />
-            <div className="p-7">
-              {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
-              {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
-              {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
-              {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
-            </div>
+        <ShimmerBorder accent={meta.color}>
+          <div className="p-7">
+            {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
+            {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
+            {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
+            {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
           </div>
-        </div>
+        </ShimmerBorder>
       )}
     </div>
   );
