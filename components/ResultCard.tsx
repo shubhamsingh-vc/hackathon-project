@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -22,23 +22,24 @@ interface ResultCardProps {
 // ─── Reusable Copy Button ───
 function CopyBtn({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(text).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
     <button
       type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        navigator.clipboard.writeText(text).catch(() => {
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        });
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
+      onClick={handleCopy}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
         copied ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
       }`}
@@ -53,7 +54,7 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
 }
 
 // ─── Hashtags Output ───
-function HashtagsOutput({ content }: { content: string[] }) {
+function HashtagsOutput({ content, onEditRequest }: { content: string[]; onEditRequest: () => void }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
   return (
@@ -63,25 +64,22 @@ function HashtagsOutput({ content }: { content: string[] }) {
           <span className="text-[11px] font-bold text-[#A855F7] uppercase tracking-wider">Hashtags</span>
           <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigator.clipboard.writeText(allTags);
-            setCopiedAll(true);
-            setTimeout(() => setCopiedAll(false), 2000);
-          }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 ${
-            copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-          }`}
-        >
-          {copiedAll ? "Copied!" : "Copy All"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 ${
+              copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+            }`}
+          >
+            {copiedAll ? "Copied!" : "Copy All"}
+          </button>
+          <CopyBtn text={allTags} label="All" />
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         {content.map((tag, i) => (
-          <CopyBtn key={i} text={tag} label={tag.length > 15 ? tag.substring(0, 15) + "…" : tag} />
+          <CopyBtn key={i} text={tag} label={tag.length > 18 ? tag.substring(0, 18) + "…" : tag} />
         ))}
       </div>
     </div>
@@ -212,6 +210,87 @@ function ScriptOutput({ content }: { content: string }) {
   );
 }
 
+// ─── Edit Overlay ───
+function EditOverlay({
+  content,
+  type,
+  onSave,
+  onCancel,
+}: {
+  content: string | string[];
+  type: string;
+  onSave: (newContent: string | string[]) => void;
+  onCancel: () => void;
+}) {
+  const isArray = Array.isArray(content);
+
+  // For array types, join with newlines for editing
+  const editText = isArray ? content.join("\n") : content;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [draft, setDraft] = useState(editText);
+
+  // Auto-resize textarea
+  const handleChange = (val: string) => {
+    setDraft(val);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+    }
+  };
+
+  const handleSave = () => {
+    if (isArray) {
+      const lines = draft.split("\n").map((l) => l.trim()).filter(Boolean);
+      onSave(lines);
+    } else {
+      onSave(draft);
+    }
+  };
+
+  return (
+    <div className="space-y-4 fade-in">
+      {/* Edit header */}
+      <div className="flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#F59E0B", boxShadow: "0 0 6px #F59E0B" }} />
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-[#F59E0B]">Editing — make your changes below</span>
+      </div>
+
+      {/* Edit textarea */}
+      <textarea
+        ref={textareaRef}
+        value={draft}
+        onChange={(e) => handleChange(e.target.value)}
+        className="w-full bg-[rgba(245,158,11,0.04)] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed font-mono resize-none outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
+        style={{ minHeight: "160px" }}
+        autoFocus
+        placeholder={isArray ? "Enter each item on a new line..." : "Edit your content..."}
+      />
+
+      {/* Character count + actions */}
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] text-[#6B7280]">{draft.length} characters</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-medium bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
   hook: { label: "Viral Hook", color: "#7C3AED" },
@@ -224,20 +303,17 @@ export default function ResultCard({ type, content: initialContent, platform, to
   const { data: session, status } = useSession();
   const router = useRouter();
   const [content, setContent] = useState(initialContent);
-  const [editMode, setEditMode] = useState(false);
-  const [editedText, setEditedText] = useState("");
+  const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [shuffling, setShuffling] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  const meta = TYPE_META[type] || { label: type, color: "#7C3AED" };
+  // Sync when new content comes from parent (e.g., after shuffle)
+  if (initialContent !== content && !editing) {
+    setContent(initialContent);
+  }
 
-  // Sync when new content comes in
-  const handleContentChange = (newContent: string | string[]) => {
-    setContent(newContent);
-    if (onRegenerate) onRegenerate(newContent);
-  };
+  const meta = TYPE_META[type] || { label: type, color: "#7C3AED" };
 
   const getFullText = () => Array.isArray(content) ? content.join("\n") : content;
 
@@ -254,51 +330,16 @@ export default function ResultCard({ type, content: initialContent, platform, to
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
-  const handleEdit = () => {
-    setEditedText(getFullText());
-    setEditMode(true);
-  };
-
-  const handleSaveEdit = () => {
-    const newContent = editedText;
+  const handleEditSave = (newContent: string | string[]) => {
     setContent(newContent);
-    setEditMode(false);
-    if (onRegenerate) onRegenerate(newContent);
+    setEditing(false);
+    if (onRegenerate) {
+      onRegenerate(newContent);
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditMode(false);
-    setEditedText("");
-  };
-
-  const handleShuffle = async () => {
-    setShuffling(true);
-    try {
-      const endpointMap: Record<string, string> = {
-        hook: "/api/generate/hook",
-        caption: "/api/generate/caption",
-        hashtags: "/api/generate/hashtags",
-        script: "/api/generate/script",
-      };
-      const payload: Record<string, unknown> = { topic, platform, tone, creatorProfile };
-      if (type === "script") payload.duration = duration || "short";
-
-      const res = await fetch(endpointMap[type], {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        let newContent: string | string[];
-        if (type === "hook") newContent = data.hooks || [];
-        else if (type === "hashtags") newContent = data.hashtags || [];
-        else newContent = data.caption || data.script || "";
-        handleContentChange(newContent);
-      }
-    } finally {
-      setShuffling(false);
-    }
+    setEditing(false);
   };
 
   const handleSave = async () => {
@@ -332,127 +373,84 @@ export default function ResultCard({ type, content: initialContent, platform, to
           <span className="eyebrow">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
           {type !== "hashtags" && <span className="eyebrow">{tone}</span>}
           {creatorProfile?.niche && <span className="eyebrow" style={{ borderColor: "rgba(124,58,237,0.3)", color: "#A855F7", background: "rgba(124,58,237,0.08)" }}>{creatorProfile.niche}</span>}
-          {editMode && <span className="eyebrow !text-[#F59E0B] !border-[rgba(245,158,11,0.4)] !bg-[rgba(245,158,11,0.1)]">Editing</span>}
+          {editing && <span className="eyebrow !text-[#F59E0B] !border-[rgba(245,158,11,0.4)] !bg-[rgba(245,158,11,0.1)]">Editing</span>}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Shuffle */}
-          <button
-            type="button"
-            onClick={handleShuffle}
-            disabled={shuffling}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500"
-          >
-            {shuffling ? (
-              <><span className="spinner !w-3 !h-3" />Regenerating...</>
-            ) : (
-              <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Shuffle</>
-            )}
-          </button>
-
-          {/* Edit */}
-          <button
-            type="button"
-            onClick={editMode ? handleSaveEdit : handleEdit}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
-              editMode
-                ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)] hover:bg-[rgba(16,185,129,0.2)]"
-                : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-            }`}
-          >
-            {editMode ? (
-              <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Save</>
-            ) : (
-              <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</>
-            )}
-          </button>
-
-          {/* Copy All */}
-          <button
-            type="button"
-            onClick={handleCopyAll}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
-              copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-            }`}
-          >
-            {copiedAll ? "Copied!" : "Copy All"}
-          </button>
-
-          {/* Save */}
-          {session ? (
-            <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
-              saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-            }`}>
-              {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
+        {/* Action buttons — only show when NOT editing */}
+        {!editing && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Copy All */}
+            <button
+              type="button"
+              onClick={handleCopyAll}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
+                copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+              }`}
+            >
+              {copiedAll ? (
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
+              ) : (
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
+              )}
             </button>
-          ) : (
-            <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
+
+            {/* Edit */}
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
             </button>
-          )}
-        </div>
+
+            {/* Save */}
+            {session ? (
+              <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
+                saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+              }`}>
+                {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
+              </button>
+            ) : (
+              <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-500">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Edit Mode */}
-      {editMode ? (
+      {/* Edit mode */}
+      {editing ? (
         <div className="bezel-outer mb-6">
           <div className="bezel-inner">
             <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #F59E0B80, transparent)" }} />
             <div className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  <span className="text-[13px] font-semibold text-[#F59E0B]">Edit your content</span>
-                </div>
-                <div className="flex items-center gap-2 text-[12px] text-[#6B7280]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  Make your changes below
-                </div>
-              </div>
-              <textarea
-                value={editedText}
-                onChange={(e) => setEditedText(e.target.value)}
-                className="w-full bg-white/[0.03] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed font-mono resize-y outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
-                style={{ minHeight: "200px", background: "rgba(245,158,11,0.04)" }}
-                autoFocus
+              <EditOverlay
+                content={content}
+                type={type}
+                onSave={handleEditSave}
+                onCancel={handleCancelEdit}
               />
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-[12px] text-[#6B7280]">{editedText.length} characters</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    className="px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveEdit}
-                    className="flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-medium bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    Save Changes
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      ) : null}
-
-      {/* Content */}
-      <div className="bezel-outer">
-        <div className="bezel-inner">
-          <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${meta.color}80, transparent)` }} />
-          <div className="p-7">
-            {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
-            {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
-            {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
-            {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
+      ) : (
+        /* Normal output */
+        <div className="bezel-outer">
+          <div className="bezel-inner">
+            <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${meta.color}80, transparent)` }} />
+            <div className="p-7">
+              {type === "hashtags" && Array.isArray(content) && (
+                <HashtagsOutput content={content} onEditRequest={() => setEditing(true)} />
+              )}
+              {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
+              {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
+              {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
