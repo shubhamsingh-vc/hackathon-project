@@ -17,6 +17,406 @@ interface ResultCardProps {
   };
 }
 
+// ─── Individual Copy Button ───
+function CopyChip({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all duration-300 cursor-pointer ${
+        copied
+          ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]"
+          : "bg-white/5 text-[#6B7280] border-white/10 hover:text-[#FAFAFA] hover:border-white/20"
+      }`}
+    >
+      {copied ? (
+        <>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Copied
+        </>
+      ) : (
+        <>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          {label || "Copy"}
+        </>
+      )}
+    </button>
+  );
+}
+
+// ─── Hashtags Output ───
+function HashtagsOutput({ content }: { content: string[] }) {
+  const allTags = content.join(" ");
+  const [copiedAll, setCopiedAll] = useState(false);
+
+  const handleCopyAll = () => {
+    navigator.clipboard.writeText(allTags).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = allTags;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    });
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-[#A855F7] uppercase tracking-wider">Hashtags</span>
+          <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
+        </div>
+        <button
+          onClick={handleCopyAll}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
+            copiedAll
+              ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]"
+              : "bg-white/5 text-[#6B7280] border-white/10 hover:text-[#FAFAFA] hover:border-white/20"
+          }`}
+        >
+          {copiedAll ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Copied All!
+            </>
+          ) : (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy All
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Tags Grid */}
+      <div className="flex flex-wrap gap-2">
+        {content.map((tag, i) => (
+          <span
+            key={i}
+            className="px-3 py-1.5 rounded-full text-[13px] font-mono font-medium bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] text-[#A855F7] hover:bg-[rgba(168,85,247,0.15)] hover:border-[rgba(168,85,247,0.4)] transition-all duration-300 cursor-pointer"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Hooks Output ───
+function HooksOutput({ content }: { content: string[] }) {
+  const hookTypes = ["Story Hook", "Stat Hook", "Question Hook", "Bold Claim"];
+
+  return (
+    <div className="space-y-3">
+      {content.map((hook, i) => {
+        const hookLabel = hookTypes[i] || `Hook ${i + 1}`;
+        const isQuestion = hook.includes("?");
+        const hasStat = /\d+%|\d+K|\$\d/.test(hook);
+        const hookStyle = isQuestion ? "question" : hasStat ? "stat" : "bold";
+
+        return (
+          <div
+            key={i}
+            className="group relative rounded-2xl p-5 bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] hover:border-[rgba(124,58,237,0.35)] hover:bg-[rgba(124,58,237,0.1)] transition-all duration-500"
+            style={{ boxShadow: "0 0 20px rgba(124,58,237,0.05)" }}
+          >
+            {/* Label */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold"
+                  style={{ background: "rgba(124,58,237,0.2)", color: "#A855F7" }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#A855F7" }}>
+                  {hookLabel}
+                </span>
+                {hookStyle === "question" && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(16,185,129,0.1)] text-[#10B981] border border-[rgba(16,185,129,0.2)]">?</span>
+                )}
+                {hookStyle === "stat" && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(245,158,11,0.1)] text-[#F59E0B] border border-[rgba(245,158,11,0.2)]">%</span>
+                )}
+              </div>
+              <CopyChip text={hook} />
+            </div>
+
+            {/* Hook Text */}
+            <p className="text-[15px] text-[#E5E7EB] leading-relaxed font-medium">
+              {hook}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Caption Output ───
+function CaptionOutput({ content }: { content: string }) {
+  const lines = content.split("\n").filter((line) => line.trim() !== "");
+  const totalChars = content.length;
+  const isLong = totalChars > 200;
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#6366F1" }}>Caption</span>
+          <span className="text-[11px] text-[#6B7280]">{totalChars} characters</span>
+          {isLong && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(99,102,241,0.1)] text-[#6366F1] border border-[rgba(99,102,241,0.2)]">
+              Long form
+            </span>
+          )}
+        </div>
+        <CopyChip text={content} label="Full Copy" />
+      </div>
+
+      {/* Caption Lines */}
+      <div className="space-y-1">
+        {lines.map((line, i) => {
+          const isEmoji = /^[\p{Emoji}]+$/u.test(line.trim());
+          const isEllipsis = line.trim() === "..." || line.trim() === "…";
+          const isCTA = /\b(link|bio|follow|comment|share|save|tag)\b/i.test(line);
+          const isHashtag = line.trim().startsWith("#");
+
+          return (
+            <p
+              key={i}
+              className={`text-[14px] leading-relaxed transition-colors duration-300 ${
+                isEmoji ? "text-2xl" : isEllipsis ? "text-[#6B7280]" : isCTA ? "text-[#10B981] font-medium" : isHashtag ? "text-[#A855F7]" : "text-[#E5E7EB]"
+              }`}
+            >
+              {line}
+            </p>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Script Output ───
+interface ScriptLine {
+  type: "timestamp" | "scene" | "hook" | "cta" | "body" | "blank";
+  text: string;
+  timestamp?: string;
+}
+
+function parseScript(content: string): ScriptLine[] {
+  const lines = content.split("\n");
+  const result: ScriptLine[] = [];
+  let hookCount = 0;
+  let bodyStarted = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      result.push({ type: "blank", text: line });
+      continue;
+    }
+
+    const timestampMatch = trimmed.match(/^\[(\d+:\d+)\]/);
+    if (timestampMatch) {
+      result.push({ type: "timestamp", text: trimmed, timestamp: timestampMatch[1] });
+      continue;
+    }
+
+    const isScene = /^\[|^🎬|^\(.*\)$/.test(trimmed);
+    if (isScene) {
+      result.push({ type: "scene", text: trimmed });
+      continue;
+    }
+
+    // First 2-3 non-blank non-scene lines are the hook
+    if (!bodyStarted && hookCount < 3) {
+      result.push({ type: "hook", text: trimmed });
+      hookCount++;
+      bodyStarted = true;
+      continue;
+    }
+
+    // Last 1-2 lines are CTA
+    const remaining = lines.slice(i).filter((l) => l.trim());
+    if (remaining.length <= 2 && !trimmed.startsWith("[")) {
+      result.push({ type: "cta", text: trimmed });
+      continue;
+    }
+
+    result.push({ type: "body", text: trimmed });
+  }
+
+  return result;
+}
+
+function ScriptOutput({ content }: { content: string }) {
+  const lines = parseScript(content);
+  const totalChars = content.length;
+
+  const getDuration = () => {
+    const timestamps = content.match(/\d+:\d+/g);
+    if (!timestamps || timestamps.length < 2) return null;
+    return "15–60s";
+  };
+
+  const duration = getDuration();
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
+          <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
+          {duration && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(139,92,246,0.1)] text-[#8B5CF6] border border-[rgba(139,92,246,0.2)]">
+              {duration}
+            </span>
+          )}
+        </div>
+        <CopyChip text={content} label="Full Script" />
+      </div>
+
+      {/* Script Lines */}
+      <div className="space-y-0.5 font-mono text-[13px]">
+        {lines.map((line, i) => {
+          if (line.type === "blank") {
+            return <div key={i} className="h-2" />;
+          }
+
+          if (line.type === "timestamp") {
+            return (
+              <div key={i} className="flex items-center gap-3 mt-3 mb-1">
+                <span
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono"
+                  style={{ background: "rgba(99,102,241,0.15)", color: "#818CF8" }}
+                >
+                  {line.timestamp}
+                </span>
+                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.3), transparent)" }} />
+              </div>
+            );
+          }
+
+          if (line.type === "scene") {
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-2 py-2 text-[12px] italic"
+                style={{ color: "rgba(168,85,247,0.7)" }}
+              >
+                <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#A855F7" }} />
+                {line.text.replace(/^\[|]$/g, "")}
+              </div>
+            );
+          }
+
+          if (line.type === "hook") {
+            return (
+              <div
+                key={i}
+                className="group flex items-start gap-3 p-3 rounded-xl"
+                style={{
+                  background: "rgba(124,58,237,0.08)",
+                  border: "1px solid rgba(124,58,237,0.2)",
+                }}
+              >
+                <span
+                  className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
+                  style={{ background: "rgba(124,58,237,0.25)", color: "#A855F7" }}
+                >
+                  ⚡
+                </span>
+                <div className="flex-1">
+                  <span className="text-[9px] font-bold uppercase tracking-widest mb-1 block" style={{ color: "#A855F7" }}>
+                    Hook
+                  </span>
+                  <span className="text-[#FAFAFA] font-semibold leading-relaxed">{line.text}</span>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+                  <CopyChip text={line.text} />
+                </div>
+              </div>
+            );
+          }
+
+          if (line.type === "cta") {
+            return (
+              <div
+                key={i}
+                className="group flex items-start gap-3 p-3 rounded-xl"
+                style={{
+                  background: "rgba(16,185,129,0.06)",
+                  border: "1px solid rgba(16,185,129,0.15)",
+                }}
+              >
+                <span
+                  className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
+                  style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}
+                >
+                  →
+                </span>
+                <div className="flex-1">
+                  <span className="text-[9px] font-bold uppercase tracking-widest mb-1 block" style={{ color: "#10B981" }}>
+                    Call to Action
+                  </span>
+                  <span className="text-[#10B981] font-medium leading-relaxed">{line.text}</span>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+                  <CopyChip text={line.text} />
+                </div>
+              </div>
+            );
+          }
+
+          // body
+          return (
+            <div key={i} className="group flex items-start gap-3 py-1 pl-4 hover:bg-white/[0.02] rounded transition-colors duration-300">
+              <span className="mt-2 w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#4B5563" }} />
+              <span className="text-[#9CA3AF] leading-relaxed">{line.text}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
   hook: { label: "Viral Hook", color: "#7C3AED" },
   caption: { label: "Caption", color: "#6366F1" },
@@ -31,7 +431,7 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopyAll = async () => {
     const text = Array.isArray(content) ? content.join("\n") : content;
     try {
       await navigator.clipboard.writeText(text);
@@ -80,19 +480,15 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
       }
       throw new Error("API failed");
     } catch {
-      // MongoDB failed — save to localStorage as fallback
       try {
         const existing = JSON.parse(localStorage.getItem("contentcraft_saved") || "[]");
-        const newItem = {
-          _id: `local_${Date.now()}`,
-          ...saveData,
-        };
+        const newItem = { _id: `local_${Date.now()}`, ...saveData };
         existing.unshift(newItem);
         localStorage.setItem("contentcraft_saved", JSON.stringify(existing.slice(0, 100)));
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } catch {
-        // localStorage also failed — silently fail
+        // silent fail
       }
     } finally {
       setSaving(false);
@@ -114,6 +510,14 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
           </span>
           <span className="eyebrow">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
           {type !== "hashtags" && <span className="eyebrow">{tone}</span>}
+          {creatorProfile?.niche && (
+            <span
+              className="eyebrow"
+              style={{ borderColor: "rgba(124,58,237,0.3)", color: "#A855F7", background: "rgba(124,58,237,0.08)" }}
+            >
+              {creatorProfile.niche}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -151,7 +555,6 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
             </button>
           )}
 
-          {/* Sign in to save prompt */}
           {!session && (
             <button
               onClick={() => router.push("/auth/signin")}
@@ -164,9 +567,9 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
             </button>
           )}
 
-          {/* Copy button */}
+          {/* Copy All button */}
           <button
-            onClick={handleCopy}
+            onClick={handleCopyAll}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
               copied
                 ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
@@ -186,93 +589,32 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                Copy
+                Copy All
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Result — Double-Bezel */}
+      {/* Content */}
       <div className="bezel-outer">
         <div className="bezel-inner">
-          {/* Top accent bar */}
           <div
             className="h-px w-full"
             style={{ background: `linear-gradient(90deg, transparent, ${meta.color}80, transparent)` }}
           />
-
           <div className="p-7">
-            {/* Hashtags */}
             {type === "hashtags" && Array.isArray(content) && (
-              <div className="flex flex-wrap gap-2">
-                {content.map((tag, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-1.5 rounded-full text-[13px] font-mono font-medium bg-white/5 border border-white/8 text-[#A855F7] hover:border-[rgba(168,85,247,0.4)] hover:bg-[rgba(168,85,247,0.08)] transition-all duration-500 cursor-default"
-                    style={{ transitionDelay: `${i * 30}ms` }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              <HashtagsOutput content={content} />
             )}
-
-            {/* Hooks */}
             {type === "hook" && Array.isArray(content) && (
-              <div className="space-y-4">
-                {content.map((hook, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-[rgba(124,58,237,0.2)] hover:bg-[rgba(124,58,237,0.04)] transition-all duration-500 group"
-                  >
-                    <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold flex-shrink-0 mt-0.5"
-                      style={{ background: `${meta.color}18`, color: meta.color }}
-                    >
-                      {i + 1}
-                    </div>
-                    <p className="text-[14px] text-[#E5E7EB] leading-relaxed group-hover:text-white transition-colors duration-500">
-                      {hook}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <HooksOutput content={content} />
             )}
-
-            {/* Caption */}
             {type === "caption" && !Array.isArray(content) && (
-              <div className="space-y-2">
-                {content.split("\n").map((line, i) => (
-                  <p key={i} className={`text-[14px] leading-relaxed ${line.trim() === "" ? "h-3" : "text-[#E5E7EB]"}`}>
-                    {line}
-                  </p>
-                ))}
-              </div>
+              <CaptionOutput content={content} />
             )}
-
-            {/* Script */}
             {type === "script" && !Array.isArray(content) && (
-              <div className="space-y-0.5 font-mono text-[13px]">
-                {content.split("\n").map((line, i) => {
-                  const isScene = /^\[|^🎬|^\(/.test(line.trim());
-                  const isTimestamp = /^\[\d+:\d+\]/.test(line.trim());
-                  const isHook = i < 3;
-                  return (
-                    <p
-                      key={i}
-                      className={`leading-relaxed ${
-                        isScene ? "text-[#A855F7]/70 mt-3 -mb-1" :
-                        isTimestamp ? "text-[#6366F1]/60" :
-                        isHook ? "text-[#FAFAFA] font-semibold" :
-                        "text-[#9CA3AF]"
-                      }`}
-                    >
-                      {line}
-                    </p>
-                  );
-                })}
-              </div>
+              <ScriptOutput content={content} />
             )}
           </div>
         </div>
