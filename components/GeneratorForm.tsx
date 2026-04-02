@@ -28,12 +28,14 @@ const NICHES = [
 ];
 
 const GOALS = [
-  { id: "grow", label: "Grow Followers" },
-  { id: "sales", label: "Drive Sales" },
+  { id: "grow", label: "Grow Audience" },
+  { id: "engage", label: "Drive Engagement" },
   { id: "brand", label: "Build Brand" },
-  { id: "educate", label: "Educate" },
+  { id: "educate", label: "Educate & Inform" },
   { id: "entertain", label: "Entertain" },
-  { id: "community", label: "Build Community" },
+  { id: "inspire", label: "Inspire & Motivate" },
+  { id: "document", label: "Document Journey" },
+  { id: "showcase", label: "Showcase Work" },
 ];
 
 const PLATFORMS = [
