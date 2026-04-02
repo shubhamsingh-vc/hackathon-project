@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, extractText } from "@/lib/opuscode";
+import { buildCreatorContext } from "@/lib/creatorContext";
 
 const MODEL = "claude-sonnet-4-6";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, platform, count = 20 } = await req.json();
+    const { topic, platform, count = 20, creatorProfile } = await req.json();
 
     if (!topic || !platform) {
       return NextResponse.json({ error: "Topic and platform are required" }, { status: 400 });
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
       tiktok: "TikTok — trendy, platform-specific, mix of viral tags (#fyp #foryou) and niche",
     };
 
+    const profileContext = buildCreatorContext(creatorProfile);
+
     const prompt = `You are a social media hashtag strategist. Generate ${count} relevant hashtags for ${platform} content about: "${topic}".
+${profileContext}
 
 Platform context: ${platformContext[platform] || platform}
 

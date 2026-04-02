@@ -1,7 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ResultCard from "./ResultCard";
+
+type CreatorProfile = {
+  niche: string;
+  targetAudience: string;
+  goals: string[];
+};
+
+const NICHES = [
+  "Lifestyle",
+  "Fitness & Health",
+  "Fashion & Beauty",
+  "Tech & Gadgets",
+  "Food & Cooking",
+  "Travel",
+  "Finance & Investing",
+  "Education & Learning",
+  "Entertainment",
+  "Business & Marketing",
+  "Gaming",
+  "Art & Design",
+  "Parenting & Family",
+  "Self-Improvement",
+  "Other",
+];
+
+const GOALS = [
+  { id: "grow", label: "Grow Followers" },
+  { id: "sales", label: "Drive Sales" },
+  { id: "brand", label: "Build Brand" },
+  { id: "educate", label: "Educate" },
+  { id: "entertain", label: "Entertain" },
+  { id: "community", label: "Build Community" },
+];
 
 const PLATFORMS = [
   { id: "instagram", label: "Instagram", color: "#E1306C" },
@@ -37,6 +70,11 @@ const PLACEHOLDERS: Record<string, string> = {
   script: "e.g. How I went from 0 to 100K followers",
 };
 
+function getPlaceholder(contentType: string, niche: string): string {
+  if (!niche) return PLACEHOLDERS[contentType] || "Describe your topic...";
+  return PLACEHOLDERS[contentType] || `Your ${niche} topic...`;
+}
+
 type ResultType = {
   type: string;
   content: string | string[];
@@ -51,6 +89,64 @@ export default function GeneratorForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResultType>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Creator Profile state
+  const [niche, setNiche] = useState("");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [goals, setGoals] = useState<string[]>([]);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Load existing creator profile on mount
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.creatorProfile) {
+          setNiche(data.creatorProfile.niche || "");
+          setTargetAudience(data.creatorProfile.targetAudience || "");
+          setGoals(data.creatorProfile.goals || []);
+          if (data.creatorProfile.niche && !topic) {
+            setTopic(data.creatorProfile.niche);
+          }
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleGoal = (id: string) => {
+    setGoals((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    );
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    setProfileError(null);
+    const profile = { niche, targetAudience, goals };
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creatorProfile: profile }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } catch {
+      // MongoDB failed — save to localStorage as fallback
+      localStorage.setItem("creatorProfile", JSON.stringify(profile));
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const creatorProfile: CreatorProfile = { niche, targetAudience, goals };
+  const hasProfile = niche || targetAudience || goals.length > 0;
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -70,7 +166,7 @@ export default function GeneratorForm() {
         script: "/api/generate/script",
       };
 
-      const payload: Record<string, string> = { topic, platform, tone };
+      const payload: Record<string, unknown> = { topic, platform, tone, creatorProfile };
       if (contentType === "script") {
         payload.duration = duration;
       }
@@ -106,8 +202,128 @@ export default function GeneratorForm() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
+
   return (
-    <div className="space-y-10">
+    <form className="space-y-10" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+
+      {/* ─── Creator Profile Section ─── */}
+      <div
+        className="rounded-2xl border"
+        style={{
+          background: "rgba(124,58,237,0.04)",
+          border: "1px solid rgba(124,58,237,0.2)",
+          boxShadow: "0 0 24px rgba(124,58,237,0.08)",
+        }}
+      >
+        {/* Section Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: "#7C3AED", boxShadow: "0 0 6px #7C3AED" }}
+            />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#A855F7]">
+              Creator Profile
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveProfile}
+            disabled={profileSaving}
+            className={`text-[12px] px-4 py-1.5 rounded-full font-medium transition-all duration-300 ${
+              profileSaved
+                ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
+                : "bg-[rgba(124,58,237,0.2)] text-[#A855F7] border border-[rgba(124,58,237,0.4)] hover:bg-[rgba(124,58,237,0.3)]"
+            }`}
+          >
+            {profileSaving ? (
+              <span className="flex items-center gap-1.5">
+                <span className="spinner !w-3 !h-3" />
+                Saving...
+              </span>
+            ) : profileSaved ? (
+              <span className="flex items-center gap-1.5">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Saved!
+              </span>
+            ) : (
+              "Save Profile"
+            )}
+          </button>
+        </div>
+
+        {/* Fields */}
+        <div className="px-6 pb-6 pt-5 space-y-4">
+          {/* Niche + Audience row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
+                Content Niche
+              </label>
+              <select
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                className="input-base text-[13px] cursor-pointer"
+              >
+                <option value="">Select niche...</option>
+                {NICHES.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
+                Target Audience
+              </label>
+              <input
+                type="text"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+                className="input-base text-[13px]"
+                placeholder="e.g. Women 18-34, Gen Z creators..."
+              />
+            </div>
+          </div>
+
+          {/* Content Goals */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
+              Content Goals
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {GOALS.map((goal) => {
+                const isActive = goals.includes(goal.id);
+                return (
+                  <button
+                    key={goal.id}
+                    type="button"
+                    onClick={() => toggleGoal(goal.id)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
+                      isActive ? "text-white" : "text-[#6B7280] border-white/[0.08] hover:border-white/[0.15]"
+                    }`}
+                    style={isActive ? {
+                      background: "linear-gradient(135deg, rgba(124,58,237,0.35), rgba(168,85,247,0.25))",
+                      border: "1px solid rgba(124,58,237,0.5)",
+                      boxShadow: "0 0 12px rgba(124,58,237,0.25)",
+                    } : {}}
+                  >
+                    {goal.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Platform Selector */}
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-4">
@@ -117,6 +333,7 @@ export default function GeneratorForm() {
           {PLATFORMS.map((p) => (
             <button
               key={p.id}
+              type="button"
               onClick={() => setPlatform(p.id)}
               className={`chip ${platform === p.id ? "active" : ""}`}
             >
@@ -140,26 +357,60 @@ export default function GeneratorForm() {
           Content Type
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {CONTENT_TYPES.map((ct) => (
-            <button
-              key={ct.id}
-              onClick={() => {
-                setContentType(ct.id);
-                setResult(null);
-              }}
-              className={`bezel-inner-subtle text-left cursor-pointer group transition-all duration-500 ${
-                contentType === ct.id
-                  ? "border-[rgba(124,58,237,0.5)] bg-[rgba(124,58,237,0.08)]"
-                  : ""
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-lg">{ct.icon}</span>
-                <span className="text-[14px] font-semibold text-[#FAFAFA]">{ct.label}</span>
-              </div>
-              <p className="text-[11px] text-[#6B7280]">{ct.description}</p>
-            </button>
-          ))}
+          {CONTENT_TYPES.map((ct) => {
+            const isActive = contentType === ct.id;
+            return (
+              <button
+                key={ct.id}
+                type="button"
+                onClick={() => {
+                  setContentType(ct.id);
+                  setResult(null);
+                }}
+                className={`
+                  relative overflow-hidden rounded-2xl p-5 text-left cursor-pointer
+                  transition-all duration-500 ease-out
+                  border backdrop-blur-sm
+                  ${isActive
+                    ? "border-[rgba(124,58,237,0.6)] scale-[1.03] bg-[rgba(124,58,237,0.1)]"
+                    : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04] hover:scale-[1.01]"
+                  }
+                `}
+                style={{
+                  boxShadow: isActive
+                    ? "0 0 24px rgba(124,58,237,0.25), inset 0 0 16px rgba(124,58,237,0.06)"
+                    : "none",
+                }}
+              >
+                <div
+                  className={`absolute top-0 left-0 right-0 h-[2px] transition-all duration-500 ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                  style={{
+                    background: "linear-gradient(90deg, #7C3AED, #A855F7)",
+                    boxShadow: "0 0 12px rgba(124,58,237,0.6)",
+                  }}
+                />
+                <div
+                  className={`text-2xl mb-3 transition-all duration-500 ${
+                    isActive ? "scale-110" : "scale-100"
+                  }`}
+                >
+                  {ct.icon}
+                </div>
+                <div className={`text-[14px] font-bold mb-1 transition-colors duration-500 ${
+                  isActive ? "text-[#FAFAFA]" : "text-[#9CA3AF]"
+                }`}>
+                  {ct.label}
+                </div>
+                <div className={`text-[11px] transition-colors duration-500 ${
+                  isActive ? "text-[#A855F7]" : "text-[#6B7280]"
+                }`}>
+                  {ct.description}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -173,6 +424,7 @@ export default function GeneratorForm() {
             {SCRIPT_DURATIONS.map((d) => (
               <button
                 key={d.id}
+                type="button"
                 onClick={() => setDuration(d.id)}
                 className={`chip ${duration === d.id ? "active" : ""}`}
               >
@@ -192,6 +444,7 @@ export default function GeneratorForm() {
           {TONES.map((t) => (
             <button
               key={t}
+              type="button"
               onClick={() => setTone(t)}
               className={`chip text-[13px] ${tone === t ? "active" : ""}`}
             >
@@ -209,7 +462,8 @@ export default function GeneratorForm() {
         <textarea
           value={topic}
           onChange={(e) => { setTopic(e.target.value); setError(null); }}
-          placeholder={PLACEHOLDERS[contentType]}
+          onKeyDown={handleKeyDown}
+          placeholder={getPlaceholder(contentType, niche)}
           className="input-base"
           rows={3}
         />
@@ -227,7 +481,7 @@ export default function GeneratorForm() {
 
       {/* Generate Button */}
       <button
-        onClick={handleGenerate}
+        type="submit"
         disabled={loading}
         className={`btn-primary w-full justify-center text-[15px] py-4 ${loading ? "opacity-80" : ""}`}
       >
@@ -268,8 +522,9 @@ export default function GeneratorForm() {
           platform={platform}
           tone={tone}
           topic={topic}
+          creatorProfile={creatorProfile}
         />
       )}
-    </div>
+    </form>
   );
 }

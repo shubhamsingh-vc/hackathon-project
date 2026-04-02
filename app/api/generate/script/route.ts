@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, extractText } from "@/lib/opuscode";
+import { buildCreatorContext } from "@/lib/creatorContext";
 
 const MODEL = "claude-sonnet-4-6";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, platform, duration = "short", tone } = await req.json();
+    const { topic, platform, duration = "short", tone, creatorProfile } = await req.json();
 
     if (!topic || !platform) {
       return NextResponse.json({ error: "Topic and platform are required" }, { status: 400 });
@@ -32,7 +33,10 @@ export async function POST(req: NextRequest) {
       tiktok: "TikTok — conversational, self-aware, trending sounds reference, punchy ending",
     };
 
+    const profileContext = buildCreatorContext(creatorProfile);
+
     const prompt = `You are a professional video script writer. Write a ${format.style} video script for ${platform} about: "${topic}".
+${profileContext}
 
 Script format: ${format.lines}
 Estimated duration: ${format.time}

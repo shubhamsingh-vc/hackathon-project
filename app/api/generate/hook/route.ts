@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, extractText } from "@/lib/opuscode";
+import { buildCreatorContext } from "@/lib/creatorContext";
 
 const MODEL = "claude-sonnet-4-6";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, platform, tone } = await req.json();
+    const { topic, platform, tone, creatorProfile } = await req.json();
 
     if (!topic || !platform) {
       return NextResponse.json({ error: "Topic and platform are required" }, { status: 400 });
@@ -17,9 +18,12 @@ export async function POST(req: NextRequest) {
       tiktok: "TikTok — needs an immediate attention-grabber, conversational and trendy",
     };
 
+    const profileContext = buildCreatorContext(creatorProfile);
+
     const prompt = `You are a viral content expert. Generate 3 compelling opening hooks for ${platform} about "${topic}".
 The hook should be ${tone || "engaging"} in tone.
 Platform context: ${platformDescriptions[platform] || platform}
+${profileContext}
 
 Rules:
 - Each hook should be 1-2 lines max

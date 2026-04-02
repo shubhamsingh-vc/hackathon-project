@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMessage, extractText } from "@/lib/opuscode";
+import { buildCreatorContext } from "@/lib/creatorContext";
 
 const MODEL = "claude-sonnet-4-6";
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, platform, tone, hook } = await req.json();
+    const { topic, platform, tone, hook, creatorProfile } = await req.json();
 
     if (!topic || !platform) {
       return NextResponse.json({ error: "Topic and platform are required" }, { status: 400 });
@@ -18,9 +19,11 @@ export async function POST(req: NextRequest) {
     };
 
     const hookContext = hook ? `Opening hook to reference: "${hook}"` : "";
+    const profileContext = buildCreatorContext(creatorProfile);
 
     const prompt = `You are a social media caption expert. Write a captivating ${tone || "engaging"} caption for ${platform} about: "${topic}".
 ${hookContext}
+${profileContext}
 
 Platform context: ${platformLengths[platform] || platform}
 

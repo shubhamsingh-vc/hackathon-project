@@ -10,6 +10,11 @@ interface ResultCardProps {
   platform: string;
   tone: string;
   topic: string;
+  creatorProfile?: {
+    niche: string;
+    targetAudience: string;
+    goals: string[];
+  };
 }
 
 const TYPE_META: Record<string, { label: string; color: string }> = {
@@ -19,8 +24,8 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
   script: { label: "Script", color: "#8B5CF6" },
 };
 
-export default function ResultCard({ type, content, platform, tone, topic }: ResultCardProps) {
-  const { data: session } = useSession();
+export default function ResultCard({ type, content, platform, tone, topic, creatorProfile }: ResultCardProps) {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,22 +48,51 @@ export default function ResultCard({ type, content, platform, tone, topic }: Res
   };
 
   const handleSave = async () => {
+    if (status === "loading") return;
+
     if (!session) {
       router.push("/auth/signin");
       return;
     }
 
     setSaving(true);
+    const saveData = {
+      type,
+      platform,
+      tone,
+      topic,
+      content,
+      creatorProfile,
+      savedAt: new Date().toISOString(),
+    };
+
     try {
       const res = await fetch("/api/saved", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, platform, tone, topic, content }),
+        body: JSON.stringify(saveData),
       });
 
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+        return;
+      }
+      throw new Error("API failed");
+    } catch {
+      // MongoDB failed — save to localStorage as fallback
+      try {
+        const existing = JSON.parse(localStorage.getItem("contentcraft_saved") || "[]");
+        const newItem = {
+          _id: `local_${Date.now()}`,
+          ...saveData,
+        };
+        existing.unshift(newItem);
+        localStorage.setItem("contentcraft_saved", JSON.stringify(existing.slice(0, 100)));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } catch {
+        // localStorage also failed — silently fail
       }
     } finally {
       setSaving(false);

@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import ScrollReveal from "@/components/ScrollReveal";
+import AppShell from "@/components/AppShell";
 
 interface SavedItem {
   _id: string;
@@ -32,18 +29,10 @@ function formatDate(dateStr: string) {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const [items, setItems] = useState<SavedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selected, setSelected] = useState<SavedItem | null>(null);
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -58,10 +47,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchItems();
-    }
-  }, [status, fetchItems]);
+    fetchItems();
+  }, [fetchItems]);
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
@@ -73,114 +60,98 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === "loading" || status === "unauthenticated") {
-    return null;
-  }
-
   return (
-    <div className="relative z-[2]">
-      <Navbar />
-      <section className="pt-32 pb-16 px-6 min-h-[100dvh]">
+    <AppShell>
+      <div className="pt-10 pb-16 px-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <ScrollReveal>
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
-              <div>
-                <span className="eyebrow mb-4 inline-flex">Dashboard</span>
-                <h1 className="text-[32px] md:text-[44px] font-extrabold tracking-tight text-[#FAFAFA]">
-                  Your Saved Content
-                </h1>
-                <p className="text-[15px] text-[#6B7280] mt-2">
-                  {items.length} saved item{items.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <a href="/generate" className="btn-primary text-[14px] !py-3 !px-6 flex-shrink-0 w-max">
-                Generate New
-                <span className="icon-circle !w-6 !h-6">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-              </a>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+            <div>
+              <span className="eyebrow mb-3 inline-flex">Dashboard</span>
+              <h1 className="text-[28px] md:text-[36px] font-extrabold tracking-tight text-[#FAFAFA]">
+                Your Saved Content
+              </h1>
+              <p className="text-[14px] text-[#6B7280] mt-1">
+                {items.length} saved item{items.length !== 1 ? "s" : ""}
+              </p>
             </div>
-          </ScrollReveal>
+            <a href="/generate" className="btn-primary text-[14px] !py-2.5 !px-6 flex-shrink-0 w-max">
+              Generate New
+              <span className="icon-circle !w-5 !h-5">
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                  <path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            </a>
+          </div>
 
           {/* Loading */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="skeleton h-48" />
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="skeleton h-44" />
               ))}
             </div>
           ) : items.length === 0 ? (
-            /* Empty state */
-            <ScrollReveal>
-              <div className="bezel-inner-subtle text-center py-20 px-10">
-                <div className="text-5xl mb-6">📝</div>
-                <h2 className="text-xl font-bold text-[#FAFAFA] mb-3">No saved content yet</h2>
-                <p className="text-[15px] text-[#6B7280] mb-8 max-w-sm mx-auto">
-                  Generate some content and click "Save to Library" to build your collection.
-                </p>
-                <a href="/generate" className="btn-primary text-[15px] py-3 px-8">
-                  Start Generating
-                </a>
-              </div>
-            </ScrollReveal>
+            <div className="bezel-inner-subtle text-center py-20 px-10">
+              <div className="text-5xl mb-6">📝</div>
+              <h2 className="text-xl font-bold text-[#FAFAFA] mb-3">No saved content yet</h2>
+              <p className="text-[15px] text-[#6B7280] mb-8 max-w-sm mx-auto">
+                Generate some content and click "Save to Library" to build your collection.
+              </p>
+              <a href="/generate" className="btn-primary text-[15px] py-3 px-8">
+                Start Generating
+              </a>
+            </div>
           ) : (
-            /* Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {items.map((item, i) => {
+              {items.map((item) => {
                 const meta = TYPE_META[item.type] || { label: item.type, color: "#7C3AED" };
                 const preview = Array.isArray(item.content)
                   ? item.content.slice(0, 2).join(" / ")
                   : item.content.split("\n").slice(0, 2).join(" ");
 
                 return (
-                  <ScrollReveal key={item._id} delay={i * 60}>
-                    <div
-                      className="bezel-inner-subtle card-interactive h-full flex flex-col cursor-pointer group"
-                      onClick={() => setSelected(item)}
-                    >
-                      {/* Header */}
-                      <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <span
-                          className="eyebrow"
-                          style={{ borderColor: `${meta.color}40`, color: meta.color, background: `${meta.color}12` }}
-                        >
-                          {meta.label}
-                        </span>
-                        <span className="eyebrow">{item.platform}</span>
-                      </div>
-
-                      {/* Topic */}
-                      <h3 className="text-[15px] font-semibold text-[#FAFAFA] mb-2 line-clamp-1">
-                        {item.topic}
-                      </h3>
-
-                      {/* Preview */}
-                      <p className="text-[13px] text-[#6B7280] line-clamp-2 flex-1 mb-4 leading-relaxed">
-                        {preview}
-                      </p>
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/[0.06]">
-                        <span className="text-[11px] text-[#374151]">{formatDate(item.createdAt)}</span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}
-                          disabled={deleting === item._id}
-                          className="text-[12px] text-[#374151] hover:text-[#EF4444] transition-colors disabled:opacity-50"
-                        >
-                          {deleting === item._id ? "..." : "Delete"}
-                        </button>
-                      </div>
+                  <div
+                    key={item._id}
+                    className="bezel-inner-subtle card-interactive h-full flex flex-col cursor-pointer group"
+                    onClick={() => setSelected(item)}
+                  >
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span
+                        className="eyebrow"
+                        style={{ borderColor: `${meta.color}40`, color: meta.color, background: `${meta.color}12` }}
+                      >
+                        {meta.label}
+                      </span>
+                      <span className="eyebrow">{item.platform}</span>
                     </div>
-                  </ScrollReveal>
+
+                    <h3 className="text-[15px] font-semibold text-[#FAFAFA] mb-2 line-clamp-1">
+                      {item.topic}
+                    </h3>
+
+                    <p className="text-[13px] text-[#6B7280] line-clamp-2 flex-1 mb-4 leading-relaxed">
+                      {preview}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/[0.06]">
+                      <span className="text-[11px] text-[#374151]">{formatDate(item.createdAt)}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(item._id); }}
+                        disabled={deleting === item._id}
+                        className="text-[12px] text-[#374151] hover:text-[#EF4444] transition-colors disabled:opacity-50"
+                      >
+                        {deleting === item._id ? "..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
         </div>
-      </section>
+      </div>
 
       {/* Detail Modal */}
       {selected && (
@@ -196,7 +167,6 @@ export default function DashboardPage() {
                 style={{ background: `linear-gradient(90deg, transparent, ${TYPE_META[selected.type]?.color || "#7C3AED"}80, transparent)` }}
               />
               <div className="p-8">
-                {/* Meta */}
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <span className="eyebrow" style={{ borderColor: `${TYPE_META[selected.type]?.color}40`, color: TYPE_META[selected.type]?.color, background: `${TYPE_META[selected.type]?.color}12` }}>
                     {TYPE_META[selected.type]?.label}
@@ -208,14 +178,12 @@ export default function DashboardPage() {
 
                 <h2 className="text-[18px] font-bold text-[#FAFAFA] mb-6">{selected.topic}</h2>
 
-                {/* Content */}
                 <div className="space-y-1 font-mono text-[13px]">
                   {(Array.isArray(selected.content) ? selected.content : selected.content.split("\n")).map((line, i) => (
                     <p key={i} className={`leading-relaxed ${line.trim() === "" ? "h-3" : "text-[#9CA3AF]"}`}>{line}</p>
                   ))}
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-3 mt-8">
                   <button
                     onClick={async () => {
@@ -238,6 +206,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   );
 }
