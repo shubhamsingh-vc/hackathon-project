@@ -38,7 +38,7 @@ Output format (just the hooks, nothing else):
 2. [hook text]
 3. [hook text]`;
 
-    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 400);
+    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 200);
     const hooksText = extractText(response);
 
     if (!hooksText.trim()) {

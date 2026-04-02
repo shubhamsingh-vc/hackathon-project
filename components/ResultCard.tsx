@@ -21,7 +21,9 @@ interface ResultCardProps {
 function CopyChip({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     navigator.clipboard.writeText(text).catch(() => {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -36,6 +38,7 @@ function CopyChip({ text, label }: { text: string; label?: string }) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all duration-300 cursor-pointer ${
         copied
@@ -68,7 +71,9 @@ function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
 
-  const handleCopyAll = () => {
+  const handleCopyAll = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     navigator.clipboard.writeText(allTags).catch(() => {
       const ta = document.createElement("textarea");
       ta.value = allTags;
@@ -90,6 +95,7 @@ function HashtagsOutput({ content }: { content: string[] }) {
           <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
         </div>
         <button
+          type="button"
           onClick={handleCopyAll}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
             copiedAll
@@ -431,7 +437,9 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const handleCopyAll = async () => {
+  const handleCopyAll = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const text = Array.isArray(content) ? content.join("\n") : content;
     try {
       await navigator.clipboard.writeText(text);
@@ -524,6 +532,7 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
           {/* Save button */}
           {session && (
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
@@ -557,6 +566,7 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
 
           {!session && (
             <button
+              type="button"
               onClick={() => router.push("/auth/signin")}
               className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
             >
@@ -569,6 +579,7 @@ export default function ResultCard({ type, content, platform, tone, topic, creat
 
           {/* Copy All button */}
           <button
+            type="button"
             onClick={handleCopyAll}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ${
               copied

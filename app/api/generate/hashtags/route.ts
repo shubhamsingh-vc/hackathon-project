@@ -36,7 +36,7 @@ Rules:
 Output format (just hashtags, nothing else):
 #tag1 #tag2 #tag3...`;
 
-    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 300);
+    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 150);
     const rawText = extractText(response);
 
     if (!rawText.trim()) {

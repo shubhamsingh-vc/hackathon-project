@@ -21,25 +21,13 @@ export async function POST(req: NextRequest) {
     const hookContext = hook ? `Opening hook to reference: "${hook}"` : "";
     const profileContext = buildCreatorContext(creatorProfile);
 
-    const prompt = `You are a social media caption expert. Write a captivating ${tone || "engaging"} caption for ${platform} about: "${topic}".
+    const prompt = `Write a ${tone || "engaging"} caption for ${platform} about "${topic}".
 ${hookContext}
 ${profileContext}
+Platform: ${platformLengths[platform] || platform}
+Rules: ${tone ? `Use ${tone} tone. ` : ""}1-2 line breaks. End with a CTA. Strategic emojis. No hashtags. No preamble. Output only caption.`;
 
-Platform context: ${platformLengths[platform] || platform}
-
-Rules:
-- ${tone ? `Use a ${tone} tone throughout` : "Be engaging and relatable"}
-- Include 1-2 line breaks for readability
-- End with a natural call-to-action that encourages engagement
-- Use strategic emoji placement (not overdone)
-- For Instagram: leave 2-3 cliffhanger dots "..." at the end if it fits
-- For TikTok: make it punchy and match TikTok's casual voice
-- Do NOT include hashtags in the caption itself
-- Do NOT add any preamble
-
-Output only the caption, nothing else.`;
-
-    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 500);
+    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 300);
     const caption = extractText(response);
 
     if (!caption.trim()) {
