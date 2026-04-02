@@ -9,6 +9,39 @@ type CreatorProfile = {
   goals: string[];
 };
 
+const AUDIENCE_OPTIONS = [
+  "Women 18-34",
+  "Men 18-34",
+  "Gen Z (13-26)",
+  "Millennials (27-42)",
+  "Gen X (43-58)",
+  "Seniors 58+",
+  "Teenagers",
+  "College Students",
+  "Working Professionals",
+  "Busy Moms",
+  "Dads",
+  "Entrepreneurs",
+  "Fitness Enthusiasts",
+  "Beauty & Fashion Lovers",
+  "Foodies",
+  "Tech Lovers",
+  "Gamers",
+  "Travelers",
+  "Parents",
+  "Small Business Owners",
+  "Creators & Influencers",
+  "Students",
+  "Remote Workers",
+  "Health & Wellness Seekers",
+  "DIY & Crafters",
+  "Pet Owners",
+  "Book Lovers",
+  "Music Lovers",
+  "Parents of Toddlers",
+  "Parents of Teens",
+];
+
 const NICHES = [
   { id: "lifestyle", label: "Lifestyle", emoji: "✨", color: "#F472B6" },
   { id: "fitness", label: "Fitness & Health", emoji: "💪", color: "#10B981" },
@@ -100,6 +133,8 @@ export default function GeneratorForm() {
   const [nicheOpen, setNicheOpen] = useState(false);
   const [nicheSearch, setNicheSearch] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
+  const [audienceOpen, setAudienceOpen] = useState(false);
+  const [audienceSearch, setAudienceSearch] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -110,20 +145,25 @@ export default function GeneratorForm() {
     n.label.toLowerCase().includes(nicheSearch.toLowerCase())
   );
 
-  // Close dropdown on outside click
+  // Filtered audience for search
+  const filteredAudience = AUDIENCE_OPTIONS.filter((a) =>
+    a.toLowerCase().includes(audienceSearch.toLowerCase())
+  );
+
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!nicheOpen) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as Element;
-      if (!target.closest(".niche-dropdown")) {
+      if (!target.closest(".niche-dropdown") && !target.closest(".audience-dropdown")) {
         setNicheOpen(false);
         setNicheSearch("");
+        setAudienceOpen(false);
+        setAudienceSearch("");
       }
     };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nicheOpen]);
+  }, []);
 
   // Load existing creator profile on mount
   useEffect(() => {
@@ -406,17 +446,110 @@ export default function GeneratorForm() {
           </div>
 
           {/* Target Audience */}
-          <div>
+          <div className="audience-dropdown relative">
             <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
               Target Audience
             </label>
-            <input
-              type="text"
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              className="input-base text-[13px]"
-              placeholder="e.g. Women 18-34, Gen Z creators, busy professionals..."
-            />
+
+            {/* Trigger */}
+            <button
+              type="button"
+              onClick={() => setAudienceOpen(!audienceOpen)}
+              className={`
+                w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-all duration-300 cursor-pointer text-left
+                ${audienceOpen
+                  ? "border-[rgba(124,58,237,0.5)] bg-[rgba(124,58,237,0.08)]"
+                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.15]"
+                }
+              `}
+              style={audienceOpen ? { boxShadow: "0 0 20px rgba(124,58,237,0.2)" } : {}}
+            >
+              {targetAudience ? (
+                <span className="text-[14px] text-[#FAFAFA] font-medium">{targetAudience}</span>
+              ) : (
+                <span className="text-[14px] text-[#6B7280]">Select your audience...</span>
+              )}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={audienceOpen ? "#A855F7" : "#6B7280"}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="flex-shrink-0 transition-transform duration-300"
+                style={{ transform: audienceOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {audienceOpen && (
+              <div
+                className="mt-2 rounded-xl border border-white/[0.1] overflow-hidden absolute top-full left-0 right-0 z-50"
+                style={{
+                  background: "#0D0D0D",
+                  boxShadow: "0 0 40px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.1)",
+                }}
+              >
+                {/* Search */}
+                <div className="p-3 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={audienceSearch}
+                      onChange={(e) => setAudienceSearch(e.target.value)}
+                      placeholder="Search audience..."
+                      className="flex-1 bg-transparent text-[13px] text-[#E5E7EB] placeholder-[#4B5563] outline-none"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Options */}
+                <div className="max-h-52 overflow-y-auto py-2">
+                  {filteredAudience.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-[13px] text-[#6B7280]">
+                      No results found
+                    </div>
+                  ) : (
+                    filteredAudience.map((option, i) => {
+                      const isSelected = targetAudience === option;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setTargetAudience(option);
+                            setAudienceOpen(false);
+                            setAudienceSearch("");
+                          }}
+                          className={`
+                            w-full flex items-center justify-between px-4 py-2.5 transition-all duration-200 cursor-pointer
+                            ${isSelected ? "bg-[rgba(124,58,237,0.12)]" : "hover:bg-white/[0.04]"}
+                          `}
+                        >
+                          <span className={`text-[14px] ${isSelected ? "text-white font-medium" : "text-[#9CA3AF]"}`}>
+                            {option}
+                          </span>
+                          {isSelected && (
+                            <svg className="flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Content Goals */}
