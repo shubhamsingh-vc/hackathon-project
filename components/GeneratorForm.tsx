@@ -97,11 +97,33 @@ export default function GeneratorForm() {
 
   // Creator Profile state
   const [niche, setNiche] = useState("");
+  const [nicheOpen, setNicheOpen] = useState(false);
+  const [nicheSearch, setNicheSearch] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Filtered niches for search
+  const filteredNiches = NICHES.filter((n) =>
+    n.label.toLowerCase().includes(nicheSearch.toLowerCase())
+  );
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!nicheOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (!target.closest(".niche-dropdown")) {
+        setNicheOpen(false);
+        setNicheSearch("");
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nicheOpen]);
 
   // Load existing creator profile on mount
   useEffect(() => {
@@ -267,55 +289,120 @@ export default function GeneratorForm() {
 
         {/* Fields */}
         <div className="px-6 pb-6 pt-5 space-y-4">
-          {/* Niche Grid */}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-3">
+          {/* Niche Smart Dropdown */}
+          <div className="niche-dropdown relative">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
               Content Niche
             </label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {NICHES.map((n) => {
-                const isActive = niche === n.label;
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => setNiche(n.label)}
-                    className={`
-                      relative flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border transition-all duration-300 cursor-pointer group
-                      ${isActive
-                        ? "border-white/15 bg-white/[0.06]"
-                        : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-                      }
-                    `}
-                    style={isActive ? {
-                      boxShadow: `0 0 20px ${n.color}25, inset 0 0 12px ${n.color}08`,
-                      borderColor: `${n.color}50`,
-                    } : {}}
-                  >
-                    {/* Emoji */}
-                    <span
-                      className="text-2xl transition-transform duration-300"
-                      style={{ transform: isActive ? "scale(1.2)" : "scale(1)" }}
-                    >
-                      {n.emoji}
+
+            {/* Trigger */}
+            <button
+              type="button"
+              onClick={() => setNicheOpen(!nicheOpen)}
+              className={`
+                w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-all duration-300 cursor-pointer text-left
+                ${nicheOpen
+                  ? "border-[rgba(124,58,237,0.5)] bg-[rgba(124,58,237,0.08)]"
+                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.15]"
+                }
+              `}
+              style={nicheOpen ? { boxShadow: "0 0 20px rgba(124,58,237,0.2)" } : {}}
+            >
+              {niche ? (
+                (() => {
+                  const selected = NICHES.find((n) => n.label === niche);
+                  return (
+                    <span className="flex items-center gap-2">
+                      <span className="text-xl">{selected?.emoji || "✨"}</span>
+                      <span className="text-[14px] text-[#FAFAFA] font-medium">{niche}</span>
                     </span>
-                    {/* Label */}
-                    <span className={`text-[11px] font-medium text-center leading-tight transition-colors duration-300 ${
-                      isActive ? "text-white" : "text-[#9CA3AF] group-hover:text-[#E5E7EB]"
-                    }`}>
-                      {n.label}
-                    </span>
-                    {/* Active dot */}
-                    {isActive && (
-                      <span
-                        className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-                        style={{ background: n.color, boxShadow: `0 0 6px ${n.color}` }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  );
+                })()
+              ) : (
+                <span className="text-[14px] text-[#6B7280]">Select your niche...</span>
+              )}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={nicheOpen ? "#A855F7" : "#6B7280"}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="flex-shrink-0 transition-transform duration-300"
+                style={{ transform: nicheOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {nicheOpen && (
+              <div
+                className="mt-2 rounded-xl border border-white/[0.1] overflow-hidden"
+                style={{
+                  background: "#0D0D0D",
+                  boxShadow: "0 0 40px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.1)",
+                }}
+              >
+                {/* Search */}
+                <div className="p-3 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={nicheSearch}
+                      onChange={(e) => setNicheSearch(e.target.value)}
+                      placeholder="Search niches..."
+                      className="flex-1 bg-transparent text-[13px] text-[#E5E7EB] placeholder-[#4B5563] outline-none"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Options */}
+                <div className="max-h-64 overflow-y-auto py-2">
+                  {filteredNiches.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-[13px] text-[#6B7280]">
+                      No niches found
+                    </div>
+                  ) : (
+                    filteredNiches.map((n) => {
+                      const isSelected = niche === n.label;
+                      return (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={() => {
+                            setNiche(n.label);
+                            setNicheOpen(false);
+                            setNicheSearch("");
+                          }}
+                          className={`
+                            w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 cursor-pointer
+                            ${isSelected ? "bg-[rgba(124,58,237,0.12)]" : "hover:bg-white/[0.04]"}
+                          `}
+                        >
+                          <span className="text-xl w-7 text-center">{n.emoji}</span>
+                          <span className={`text-[14px] ${isSelected ? "text-white font-medium" : "text-[#9CA3AF]"}`}>
+                            {n.label}
+                          </span>
+                          {isSelected && (
+                            <svg className="ml-auto flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Target Audience */}
