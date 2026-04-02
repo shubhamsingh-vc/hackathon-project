@@ -13,45 +13,42 @@ export async function POST(req: NextRequest) {
     }
 
     const platformDescriptions: Record<string, string> = {
-      instagram: "Instagram Reels/Feed — stop the scroll in 1-3 seconds",
-      youtube: "YouTube Shorts — compelling hook in first 5 seconds",
-      tiktok: "TikTok — immediate attention-grabber, conversational and trendy",
+      instagram: "Instagram Reels/Feed — needs to stop the scroll in the first 1-3 seconds",
+      youtube: "YouTube Shorts — needs a compelling hook in the first 5 seconds",
+      tiktok: "TikTok — needs an immediate attention-grabber, conversational and trendy",
     };
 
     const profileContext = buildCreatorContext(creatorProfile);
 
-    // Strict prompt: output exactly 5 hooks, one per line, no prefix
-    const prompt = `You are a viral content expert. Generate exactly 5 opening hooks for ${platform} about "${topic}".
-${profileContext}
+    const prompt = `You are a viral content expert. Generate 3 compelling opening hooks for ${platform} about "${topic}".
+The hook should be ${tone || "engaging"} in tone.
 Platform context: ${platformDescriptions[platform] || platform}
-Tone: ${tone || "engaging"}
+${profileContext}
 
-Output rules — FOLLOW EXACTLY:
-- Output exactly 5 lines
-- Each line is ONE hook, 1-3 sentences max
-- NO numbers, NO bullets, NO hashtags, NO preamble
-- Vary the style: (1) bold claim, (2) question, (3) stat/fact, (4) story snippet, (5) contrarian take
-- Line 1: bold claim or shocking statement
-- Line 2: question that creates curiosity
-- Line 3: stat or surprising fact (include a number)
-- Line 4: short story opener ("I did X and Y happened...")
-- Line 5: contrarian or unexpected take
-- Do NOT add any explanation, labels, or extra text
+Rules:
+- Each hook should be 1-2 lines max
+- Make them punchy, specific, and curiosity-driven
+- Vary the hook styles (e.g., question, bold claim, story opener, stat)
+- Number each hook 1-3
+- Do NOT use hashtags in the hooks
+- Do NOT add any preamble or explanation
 
-Output ONLY the 5 hooks, one per line.`;
+Output format (just the hooks, nothing else):
+1. [hook text]
+2. [hook text]
+3. [hook text]`;
 
-    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 250);
+    const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 200);
     const hooksText = extractText(response);
 
     if (!hooksText.trim()) {
       throw new Error("AI returned an empty response. Please try again.");
     }
 
-    // Normalize: strip any leading numbers/bullets, trim each line
     const hooks = hooksText
       .split("\n")
-      .map((line) => line.replace(/^[#*\-–—•\d.)\]]+\s*/, "").trim())
-      .filter((line) => line.length > 5); // drop very short/empty lines
+      .map((line) => line.replace(/^\d+\.\s*/, "").trim())
+      .filter(Boolean);
 
     if (hooks.length === 0) {
       throw new Error("Could not parse hooks. Please try again.");
