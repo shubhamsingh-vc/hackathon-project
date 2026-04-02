@@ -727,6 +727,8 @@ export default function GeneratorForm() {
           tone={tone}
           topic={topic}
           creatorProfile={creatorProfile}
+          duration={duration}
+          onRegenerate={(newContent) => setResult({ type: result.type, content: newContent })}
         />
       )}
     </form>
