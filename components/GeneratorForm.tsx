@@ -10,21 +10,24 @@ type CreatorProfile = {
 };
 
 const NICHES = [
-  "Lifestyle",
-  "Fitness & Health",
-  "Fashion & Beauty",
-  "Tech & Gadgets",
-  "Food & Cooking",
-  "Travel",
-  "Finance & Investing",
-  "Education & Learning",
-  "Entertainment",
-  "Business & Marketing",
-  "Gaming",
-  "Art & Design",
-  "Parenting & Family",
-  "Self-Improvement",
-  "Other",
+  { id: "lifestyle", label: "Lifestyle", emoji: "✨", color: "#F472B6" },
+  { id: "fitness", label: "Fitness & Health", emoji: "💪", color: "#10B981" },
+  { id: "fashion", label: "Fashion & Beauty", emoji: "👗", color: "#EC4899" },
+  { id: "tech", label: "Tech & Gadgets", emoji: "⚡", color: "#6366F1" },
+  { id: "food", label: "Food & Cooking", emoji: "🍳", color: "#F59E0B" },
+  { id: "travel", label: "Travel", emoji: "✈️", color: "#0EA5E9" },
+  { id: "finance", label: "Finance & Investing", emoji: "📈", color: "#22C55E" },
+  { id: "education", label: "Education & Learning", emoji: "📚", color: "#8B5CF6" },
+  { id: "entertainment", label: "Entertainment", emoji: "🎭", color: "#EF4444" },
+  { id: "business", label: "Business & Marketing", emoji: "🚀", color: "#F97316" },
+  { id: "gaming", label: "Gaming", emoji: "🎮", color: "#A855F7" },
+  { id: "art", label: "Art & Design", emoji: "🎨", color: "#E879F9" },
+  { id: "parenting", label: "Parenting & Family", emoji: "👨‍👩‍👧", color: "#FB923C" },
+  { id: "selfimprovement", label: "Self-Improvement", emoji: "🌱", color: "#34D399" },
+  { id: "photography", label: "Photography", emoji: "📸", color: "#64748B" },
+  { id: "pets", label: "Pets & Animals", emoji: "🐾", color: "#D97706" },
+  { id: "music", label: "Music", emoji: "🎵", color: "#06B6D4" },
+  { id: "other", label: "Other", emoji: "🌟", color: "#9CA3AF" },
 ];
 
 const GOALS = [
@@ -264,35 +267,69 @@ export default function GeneratorForm() {
 
         {/* Fields */}
         <div className="px-6 pb-6 pt-5 space-y-4">
-          {/* Niche + Audience row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
-                Content Niche
-              </label>
-              <select
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                className="input-base text-[13px] cursor-pointer"
-              >
-                <option value="">Select niche...</option>
-                {NICHES.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+          {/* Niche Grid */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-3">
+              Content Niche
+            </label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {NICHES.map((n) => {
+                const isActive = niche === n.label;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => setNiche(n.label)}
+                    className={`
+                      relative flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border transition-all duration-300 cursor-pointer group
+                      ${isActive
+                        ? "border-white/15 bg-white/[0.06]"
+                        : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+                      }
+                    `}
+                    style={isActive ? {
+                      boxShadow: `0 0 20px ${n.color}25, inset 0 0 12px ${n.color}08`,
+                      borderColor: `${n.color}50`,
+                    } : {}}
+                  >
+                    {/* Emoji */}
+                    <span
+                      className="text-2xl transition-transform duration-300"
+                      style={{ transform: isActive ? "scale(1.2)" : "scale(1)" }}
+                    >
+                      {n.emoji}
+                    </span>
+                    {/* Label */}
+                    <span className={`text-[11px] font-medium text-center leading-tight transition-colors duration-300 ${
+                      isActive ? "text-white" : "text-[#9CA3AF] group-hover:text-[#E5E7EB]"
+                    }`}>
+                      {n.label}
+                    </span>
+                    {/* Active dot */}
+                    {isActive && (
+                      <span
+                        className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
+                        style={{ background: n.color, boxShadow: `0 0 6px ${n.color}` }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
-                Target Audience
-              </label>
-              <input
-                type="text"
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value)}
-                className="input-base text-[13px]"
-                placeholder="e.g. Women 18-34, Gen Z creators..."
-              />
-            </div>
+          </div>
+
+          {/* Target Audience */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B7280] mb-2">
+              Target Audience
+            </label>
+            <input
+              type="text"
+              value={targetAudience}
+              onChange={(e) => setTargetAudience(e.target.value)}
+              className="input-base text-[13px]"
+              placeholder="e.g. Women 18-34, Gen Z creators, busy professionals..."
+            />
           </div>
 
           {/* Content Goals */}
