@@ -54,7 +54,7 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
 }
 
 // ─── Hashtags Output ───
-function HashtagsOutput({ content, onEditRequest }: { content: string[]; onEditRequest: () => void }) {
+function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
   return (
@@ -64,18 +64,15 @@ function HashtagsOutput({ content, onEditRequest }: { content: string[]; onEditR
           <span className="text-[11px] font-bold text-[#A855F7] uppercase tracking-wider">Hashtags</span>
           <span className="text-[11px] text-[#6B7280]">{content.length} tags</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 ${
-              copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
-            }`}
-          >
-            {copiedAll ? "Copied!" : "Copy All"}
-          </button>
-          <CopyBtn text={allTags} label="All" />
-        </div>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 ${
+            copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+          }`}
+        >
+          {copiedAll ? "Copied!" : "Copy All"}
+        </button>
       </div>
       <div className="flex flex-wrap gap-2">
         {content.map((tag, i) => (
@@ -138,76 +135,171 @@ function CaptionOutput({ content }: { content: string }) {
 }
 
 // ─── Script Output ───
-interface ScriptLine { type: "timestamp" | "scene" | "hook" | "cta" | "body" | "blank"; text: string; timestamp?: string; }
-function parseScript(content: string): ScriptLine[] {
-  const lines = content.split("\n");
-  const result: ScriptLine[] = [];
-  let hookCount = 0;
-  let bodyStarted = false;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-    if (!trimmed) { result.push({ type: "blank", text: line }); continue; }
-    const ts = trimmed.match(/^\[(\d+:\d+)\]/);
-    if (ts) { result.push({ type: "timestamp", text: trimmed, timestamp: ts[1] }); continue; }
-    const isScene = /^\[|^🎬|^\(.*\)$/.test(trimmed);
-    if (isScene) { result.push({ type: "scene", text: trimmed }); continue; }
-    if (!bodyStarted && hookCount < 3) { result.push({ type: "hook", text: trimmed }); hookCount++; bodyStarted = true; continue; }
-    const remaining = lines.slice(i).filter((l) => l.trim());
-    if (remaining.length <= 2 && !trimmed.startsWith("[")) { result.push({ type: "cta", text: trimmed }); continue; }
-    result.push({ type: "body", text: trimmed });
-  }
-  return result;
-}
 function ScriptOutput({ content }: { content: string }) {
-  const lines = parseScript(content);
+  // Parse script into structured blocks
+  const blocks = parseScriptBlocks(content);
   const totalChars = content.length;
-  const timestamps = content.match(/\d+:\d+/g);
-  const duration = timestamps && timestamps.length >= 2 ? "15–60s" : null;
+
   return (
-    <div className="space-y-0.5 font-mono text-[13px]">
-      <div className="flex items-center gap-3 mb-4">
+    <div className="space-y-1">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5">
         <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
         <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-        {duration && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[rgba(139,92,246,0.1)] text-[#8B5CF6] border border-[rgba(139,92,246,0.2)]">{duration}</span>}
+        <CopyBtn text={content} label="Copy Script" />
       </div>
-      {lines.map((line, i) => {
-        if (line.type === "blank") return <div key={i} className="h-2" />;
-        if (line.type === "timestamp") return (
-          <div key={i} className="flex items-center gap-3 mt-3 mb-1">
-            <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono" style={{ background: "rgba(99,102,241,0.15)", color: "#818CF8" }}>{line.timestamp}</span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.3), transparent)" }} />
-          </div>
-        );
-        if (line.type === "scene") return (
-          <div key={i} className="flex items-center gap-2 py-2 text-[12px] italic" style={{ color: "rgba(168,85,247,0.7)" }}>
-            <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#A855F7" }} />{line.text.replace(/^\[|]$/g, "")}
-          </div>
-        );
-        if (line.type === "hook") return (
-          <div key={i} className="group flex items-start gap-3 p-3 rounded-xl" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
-            <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.25)", color: "#A855F7" }}>⚡</span>
-            <div className="flex-1"><span className="text-[9px] font-bold uppercase tracking-widest mb-1 block" style={{ color: "#A855F7" }}>Hook</span><span className="text-[#FAFAFA] font-semibold leading-relaxed">{line.text}</span></div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0"><CopyBtn text={line.text} /></div>
-          </div>
-        );
-        if (line.type === "cta") return (
-          <div key={i} className="group flex items-start gap-3 p-3 rounded-xl" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-            <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
-            <div className="flex-1"><span className="text-[9px] font-bold uppercase tracking-widest mb-1 block" style={{ color: "#10B981" }}>Call to Action</span><span className="text-[#10B981] font-medium leading-relaxed">{line.text}</span></div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0"><CopyBtn text={line.text} /></div>
-          </div>
-        );
-        return (
-          <div key={i} className="group flex items-start gap-3 py-1 pl-4 hover:bg-white/[0.02] rounded transition-colors duration-300">
-            <span className="mt-2 w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#4B5563" }} />
-            <span className="text-[#9CA3AF] leading-relaxed flex-1">{line.text}</span>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0"><CopyBtn text={line.text} /></div>
-          </div>
-        );
-      })}
+
+      {/* Script blocks */}
+      <div className="space-y-3">
+        {blocks.map((block, i) => {
+          if (block.type === "section-heading") {
+            return (
+              <div key={i} className="flex items-center gap-3 pt-2">
+                <div className="flex-1 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[rgba(139,92,246,0.5)]">{block.text}</span>
+                <div className="flex-1 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+              </div>
+            );
+          }
+          if (block.type === "timestamp") {
+            return (
+              <div key={i} className="flex items-center gap-3 mt-2">
+                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono flex-shrink-0" style={{ background: "rgba(99,102,241,0.15)", color: "#818CF8" }}>{block.text}</span>
+                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.3), transparent)" }} />
+              </div>
+            );
+          }
+          if (block.type === "scene") {
+            return (
+              <div key={i} className="flex items-center gap-2 py-2 text-[12px] italic" style={{ color: "rgba(168,85,247,0.6)" }}>
+                <span className="w-1 h-1 rounded-full flex-shrink-0 mt-1" style={{ background: "#A855F7" }} />
+                <span>{block.text}</span>
+              </div>
+            );
+          }
+          if (block.type === "hook") {
+            return (
+              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(124,58,237,0.25)", color: "#A855F7" }}>⚡</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hook</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-[15px] text-[#FAFAFA] font-semibold leading-relaxed flex-1">{block.text}</span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                    <CopyBtn text={block.text} />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          if (block.type === "cta") {
+            return (
+              <div key={i} className="group rounded-xl p-4" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-[15px] text-[#10B981] font-medium leading-relaxed flex-1">{block.text}</span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                    <CopyBtn text={block.text} />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          // body — the actual script lines
+          return (
+            <div key={i} className="group flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-white/[0.02] transition-colors duration-300">
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "rgba(139,92,246,0.4)" }} />
+              <span className="text-[14px] text-[#D1D5DB] leading-relaxed flex-1">{block.text}</span>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
+                <CopyBtn text={block.text} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+type ScriptBlock = { type: "section-heading" | "timestamp" | "scene" | "hook" | "cta" | "body"; text: string; timestamp?: string };
+
+function parseScriptBlocks(content: string): ScriptBlock[] {
+  const rawLines = content.split("\n");
+  const result: ScriptBlock[] = [];
+
+  // Normalize: strip common AI formatting artifacts
+  const lines = rawLines.map((l) => l.replace(/^(HOOK|BODY|CTA|SCRIPT)[:\s]*/i, "").trim()).filter((l) => l !== "");
+
+  let i = 0;
+  let phase: "hook" | "body" | "cta" = "hook";
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const remaining = lines.slice(i + 1).filter((l) => l.trim());
+
+    // Timestamp line
+    const tsMatch = line.match(/^\[(\d+:\d+)\]/);
+    if (tsMatch) {
+      result.push({ type: "timestamp", text: tsMatch[1], timestamp: tsMatch[1] });
+      i++;
+      continue;
+    }
+
+    // Scene / direction cue
+    if (/^\[|^🎬|^\(.*\)$/.test(line)) {
+      const clean = line.replace(/^\[|\]$/g, "");
+      if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)/i.test(clean)) {
+        result.push({ type: "section-heading", text: clean });
+      } else {
+        result.push({ type: "scene", text: clean });
+      }
+      i++;
+      continue;
+    }
+
+    // Section headings
+    if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)[:\s]/i.test(line)) {
+      const heading = line.replace(/^([^:]+):.*/i, "$1").trim();
+      result.push({ type: "section-heading", text: heading });
+      i++;
+      continue;
+    }
+
+    // CTA — last 2 lines without brackets
+    if (remaining.length <= 1 && !line.startsWith("[")) {
+      if (phase !== "cta") {
+        result.push({ type: "section-heading", text: "Call to Action" });
+        phase = "cta";
+      }
+      result.push({ type: "cta", text: line });
+      i++;
+      continue;
+    }
+
+    // Hook — first non-timestamp, non-scene lines
+    if (phase === "hook") {
+      result.push({ type: "section-heading", text: "Hook" });
+      result.push({ type: "hook", text: line });
+      phase = "body";
+      i++;
+      continue;
+    }
+
+    // Body — everything in the middle
+    if (phase === "body") {
+      result.push({ type: "body", text: line });
+      i++;
+      continue;
+    }
+
+    i++;
+  }
+
+  return result;
 }
 
 // ─── Edit Overlay ───
@@ -223,13 +315,10 @@ function EditOverlay({
   onCancel: () => void;
 }) {
   const isArray = Array.isArray(content);
-
-  // For array types, join with newlines for editing
   const editText = isArray ? content.join("\n") : content;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(editText);
 
-  // Auto-resize textarea
   const handleChange = (val: string) => {
     setDraft(val);
     if (textareaRef.current) {
@@ -248,40 +337,27 @@ function EditOverlay({
   };
 
   return (
-    <div className="space-y-4 fade-in">
-      {/* Edit header */}
+    <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#F59E0B", boxShadow: "0 0 6px #F59E0B" }} />
         <span className="text-[11px] font-semibold uppercase tracking-widest text-[#F59E0B]">Editing — make your changes below</span>
       </div>
-
-      {/* Edit textarea */}
       <textarea
         ref={textareaRef}
         value={draft}
         onChange={(e) => handleChange(e.target.value)}
         className="w-full bg-[rgba(245,158,11,0.04)] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed font-mono resize-none outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
-        style={{ minHeight: "160px" }}
+        style={{ minHeight: "200px" }}
         autoFocus
         placeholder={isArray ? "Enter each item on a new line..." : "Edit your content..."}
       />
-
-      {/* Character count + actions */}
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#6B7280]">{draft.length} characters</span>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300"
-          >
+          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-full text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300">
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-medium bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300"
-          >
+          <button type="button" onClick={handleSave} className="flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-medium bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Save Changes
           </button>
@@ -308,8 +384,8 @@ export default function ResultCard({ type, content: initialContent, platform, to
   const [saving, setSaving] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  // Sync when new content comes from parent (e.g., after shuffle)
-  if (initialContent !== content && !editing) {
+  // Sync new content from parent
+  if (JSON.stringify(initialContent) !== JSON.stringify(content) && !editing) {
     setContent(initialContent);
   }
 
@@ -333,13 +409,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
   const handleEditSave = (newContent: string | string[]) => {
     setContent(newContent);
     setEditing(false);
-    if (onRegenerate) {
-      onRegenerate(newContent);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditing(false);
+    if (onRegenerate) onRegenerate(newContent);
   };
 
   const handleSave = async () => {
@@ -365,7 +435,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
   };
 
   return (
-    <div className="fade-in">
+    <div>
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -376,10 +446,8 @@ export default function ResultCard({ type, content: initialContent, platform, to
           {editing && <span className="eyebrow !text-[#F59E0B] !border-[rgba(245,158,11,0.4)] !bg-[rgba(245,158,11,0.1)]">Editing</span>}
         </div>
 
-        {/* Action buttons — only show when NOT editing */}
         {!editing && (
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Copy All */}
             <button
               type="button"
               onClick={handleCopyAll}
@@ -394,7 +462,6 @@ export default function ResultCard({ type, content: initialContent, platform, to
               )}
             </button>
 
-            {/* Edit */}
             <button
               type="button"
               onClick={() => setEditing(true)}
@@ -404,7 +471,6 @@ export default function ResultCard({ type, content: initialContent, platform, to
               Edit
             </button>
 
-            {/* Save */}
             {session ? (
               <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border transition-all duration-500 ${
                 saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]" : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
@@ -420,30 +486,22 @@ export default function ResultCard({ type, content: initialContent, platform, to
         )}
       </div>
 
-      {/* Edit mode */}
+      {/* Content */}
       {editing ? (
         <div className="bezel-outer mb-6">
           <div className="bezel-inner">
             <div className="h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #F59E0B80, transparent)" }} />
             <div className="p-6">
-              <EditOverlay
-                content={content}
-                type={type}
-                onSave={handleEditSave}
-                onCancel={handleCancelEdit}
-              />
+              <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
             </div>
           </div>
         </div>
       ) : (
-        /* Normal output */
         <div className="bezel-outer">
           <div className="bezel-inner">
             <div className="h-px w-full" style={{ background: `linear-gradient(90deg, transparent, ${meta.color}80, transparent)` }} />
             <div className="p-7">
-              {type === "hashtags" && Array.isArray(content) && (
-                <HashtagsOutput content={content} onEditRequest={() => setEditing(true)} />
-              )}
+              {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
               {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
               {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
               {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
