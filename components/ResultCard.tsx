@@ -244,79 +244,112 @@ function CaptionOutput({ content }: { content: string }) {
 }
 
 // ─── Script Output ───
-type ScriptItem =
-  | { kind: "timestamp"; text: string }
-  | { kind: "scene"; text: string }
-  | { kind: "hook"; text: string }
-  | { kind: "cta"; text: string }
-  | { kind: "body"; text: string }
-  | { kind: "divider"; label: string };
+type ScriptLine =
+  | { kind: "section"; label: string; accent: string; timestamp?: string }
+  | { kind: "spoken"; text: string; timestamp?: string }
+  | { kind: "scene"; text: string };
 
-function parseScriptItems(content: string): ScriptItem[] {
+const SECTION_META: Record<string, { accent: string; label: string; secPerLine: number }> = {
+  HOOK: { accent: "#A855F7", label: "Hook", secPerLine: 3 },
+  CTA: { accent: "#10B981", label: "Call to Action", secPerLine: 2 },
+  INTRO: { accent: "#6366F1", label: "Intro", secPerLine: 4 },
+  OUTRO: { accent: "#F59E0B", label: "Outro", secPerLine: 3 },
+  BODY: { accent: "#8B5CF6", label: "Script", secPerLine: 5 },
+  SCRIPT: { accent: "#8B5CF6", label: "Script", secPerLine: 5 },
+};
+
+function parseScriptItems(content: string): ScriptLine[] {
   const rawLines = content.split("\n");
-  const items: ScriptItem[] = [];
+  const items: ScriptLine[] = [];
   let i = 0;
+  let pendingTs: string | undefined;
 
   while (i < rawLines.length) {
     const line = rawLines[i].trim();
     i++;
     if (!line) continue;
 
+    // Standalone [0:00] timestamp
     const tsMatch = line.match(/^\[(\d+:\d+)\]$/);
-    if (tsMatch) { items.push({ kind: "timestamp", text: tsMatch[1] }); continue; }
+    if (tsMatch) { pendingTs = tsMatch[1]; continue; }
 
+    // [SCENE: description]
     if (/^\[.+\]$/.test(line)) {
       const clean = line.slice(1, -1).trim();
       if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*$/i.test(clean)) continue;
-      items.push({ kind: "scene", text: clean }); continue;
-    }
-
-    const labelMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]?\s*$/i);
-    if (labelMatch) {
-      const label = labelMatch[1].toUpperCase();
-      if (label === "CTA") items.push({ kind: "divider", label: "Call to Action" });
-      else if (label === "HOOK") items.push({ kind: "divider", label: "Hook" });
-      else if (label === "INTRO" || label === "OUTRO") items.push({ kind: "divider", label });
-      else items.push({ kind: "divider", label: "Body" });
+      items.push({ kind: "scene", text: clean });
       continue;
     }
 
-    const labelContentMatch = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*(.+)/i);
-    if (labelContentMatch) {
-      const label = labelContentMatch[1].toUpperCase();
-      const text = labelContentMatch[2].trim();
-      if (label === "CTA" && text) items.push({ kind: "cta", text });
-      else if (label === "HOOK" && text) items.push({ kind: "hook", text });
-      else if (text) items.push({ kind: "body", text });
+    // Section label only: "HOOK:" or "HOOK"
+    const labelOnly = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]?\s*$/i);
+    if (labelOnly) {
+      const key = labelOnly[1].toUpperCase();
+      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
+      pendingTs = undefined;
       continue;
     }
 
+    // Section + content on same line: "HOOK: your text here"
+    const labelContent = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*(.+)/i);
+    if (labelContent) {
+      const key = labelContent[1].toUpperCase();
+      const text = labelContent[2].trim();
+      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      if (text) {
+        items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
+        items.push({ kind: "spoken", text, timestamp: pendingTs });
+      }
+      pendingTs = undefined;
+      continue;
+    }
+
+    // Regular content — strip any leftover prefix
     const origLine = rawLines[i - 1].trim();
     const stripped = origLine.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*/i, "").trim();
-    if (!stripped) continue;
+    if (!stripped || stripped.length < 2) { pendingTs = undefined; continue; }
 
-    const isCTA = /\b(Subscribe|follow|comment|share|save|link in bio|like|hit|check out|visit|tap|dm|tag)\b/i.test(stripped);
-    if (isCTA) { items.push({ kind: "cta", text: stripped }); continue; }
-
-    const isHook =
-      /^(did you|what if|i tried|i spent|i make|i'll show|here'?s|you'?ll never|this is|stop|stuck|can'?t believe)/i.test(stripped) ||
-      /(!{2,}|[\d,]+[\s\w]+(?:people|views|followers|subscribers)|^\d+%|\$[\d,]+k?)/.test(stripped) ||
-      (stripped.length < 80 && /^[A-Z]/.test(stripped));
-    if (isHook) { items.push({ kind: "hook", text: stripped }); continue; }
-
-    items.push({ kind: "body", text: stripped });
+    items.push({ kind: "spoken", text: stripped, timestamp: pendingTs });
+    pendingTs = undefined;
   }
 
   return items;
+}
+
+function SectionBadge({ label, accent, timestamp }: { label: string; accent: string; timestamp?: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <div
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+        style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+      >
+        <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
+        <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: accent }}>
+          {label}
+        </span>
+      </div>
+      {timestamp && (
+        <span
+          className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg"
+          style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
+        >
+          {timestamp}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function ScriptOutput({ content }: { content: string }) {
   const items = parseScriptItems(content);
   const totalChars = content.length;
 
+  // Fallback: render raw lines with estimated timestamps
   if (items.length === 0) {
     const rawLines = content.split("\n").filter((l) => l.trim());
     if (rawLines.length === 0) return null;
+    let secs = 0;
     return (
       <div>
         <TopBar color="#8B5CF6" />
@@ -325,42 +358,56 @@ function ScriptOutput({ content }: { content: string }) {
           <CopyBtn text={content} label="Copy" />
         </div>
         <div className="space-y-2">
-          {rawLines.map((line, i) => (
-            <p key={i} className="text-[14px] leading-relaxed text-[#D1D5DB]">{line.trim()}</p>
-          ))}
+          {rawLines.map((line, i) => {
+            const ts = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+            secs += 4;
+            return (
+              <div key={i} className="flex items-start gap-3 py-1.5 px-2 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
+                onClick={() => navigator.clipboard.writeText(line.trim())}>
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0 mt-0.5" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
+                  {ts}
+                </span>
+                <span className="text-[14px] leading-relaxed text-[#D1D5DB]">{line.trim()}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  const metaFor = (label: string) => {
-    const m: Record<string, { accent: string; label: string }> = {
-      Hook: { accent: "#A855F7", label: "Hook" },
-      "Call to Action": { accent: "#10B981", label: "Call to Action" },
-      INTRO: { accent: "#6366F1", label: "Intro" },
-      OUTRO: { accent: "#F59E0B", label: "Outro" },
-    };
-    return m[label] ?? { accent: "#8B5CF6", label: "Body" };
-  };
-
   // Group into sections
-  type Section = { label: string; accent: string; items: ScriptItem[] };
+  type Section = { label: string; accent: string; timestamp?: string; lines: ScriptLine[] };
   const sections: Section[] = [];
   let current: Section | null = null;
 
   for (const item of items) {
-    if (item.kind === "divider") {
+    if (item.kind === "section") {
       if (current) sections.push(current);
-      const m = metaFor(item.label);
-      current = { label: m.label, accent: m.accent, items: [] };
+      current = { label: item.label, accent: item.accent, timestamp: item.timestamp, lines: [] };
     } else if (current) {
-      current.items.push(item);
+      current.lines.push(item);
     } else {
-      const m = metaFor("Body");
-      current = { label: m.label, accent: m.accent, items: [item] };
+      current = { label: "Script", accent: "#8B5CF6", lines: [item] };
     }
   }
   if (current) sections.push(current);
+
+  // Assign timestamps to items that don't have one
+  let runningSeconds = 0;
+  for (const section of sections) {
+    const meta = Object.values(SECTION_META).find((m) => m.label === section.label) || { secPerLine: 5 };
+    if (!section.timestamp) {
+      section.timestamp = `${Math.floor(runningSeconds / 60)}:${String(runningSeconds % 60).padStart(2, "0")}`;
+    }
+    for (const line of section.lines) {
+      if (line.kind === "scene") continue;
+      if (!line.timestamp) {
+        line.timestamp = `${Math.floor(runningSeconds / 60)}:${String(runningSeconds % 60).padStart(2, "0")}`;
+      }
+      runningSeconds += meta.secPerLine;
+    }
+  }
 
   return (
     <div>
@@ -370,66 +417,54 @@ function ScriptOutput({ content }: { content: string }) {
         <CopyBtn text={content} label="Copy Script" />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {sections.map((section, si) => (
           <div key={si}>
-            {/* Section label */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1 h-4 rounded-full" style={{ background: section.accent }} />
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: section.accent }}>{section.label}</span>
-            </div>
+            {/* Section header badge */}
+            <SectionBadge label={section.label} accent={section.accent} timestamp={section.timestamp} />
 
-            {/* Items in section */}
-            <div className="space-y-1 pl-3">
-              {section.items.map((item, li) => {
-                if (item.kind === "timestamp") {
+            {/* Lines in section */}
+            <div className="space-y-1.5 pl-1">
+              {section.lines.map((line, li) => {
+                // Scene cue
+                if (line.kind === "scene") {
                   return (
-                    <div key={li} className="flex items-center gap-2 mt-1">
-                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
-                        {item.text}
-                      </span>
-                      <div className="flex-1 h-px" style={{ background: "rgba(99,102,241,0.15)" }} />
+                    <div key={li} className="flex items-center gap-2 py-1.5 px-3 rounded-lg" style={{ background: "rgba(168,85,247,0.05)", borderLeft: "2px solid rgba(168,85,247,0.2)" }}>
+                      <span className="text-[11px]">🎬</span>
+                      <span className="text-[12px] italic leading-relaxed" style={{ color: "rgba(168,85,247,0.6)" }}>{line.text}</span>
                     </div>
                   );
                 }
 
-                if (item.kind === "scene") {
+                // Spoken line: timestamp + text
+                if (line.kind === "spoken") {
                   return (
-                    <p key={li} className="text-[12px] italic pl-2 py-1" style={{ color: "rgba(168,85,247,0.5)", borderLeft: "2px solid rgba(168,85,247,0.2)" }}>
-                      🎬 {item.text}
-                    </p>
+                    <div
+                      key={li}
+                      className="group flex items-start gap-3 py-2.5 px-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(line.text); }}
+                    >
+                      <span
+                        className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
+                        style={{
+                          background: `${section.accent}12`,
+                          color: `${section.accent}99`,
+                          border: `1px solid ${section.accent}20`,
+                        }}
+                      >
+                        {line.timestamp}
+                      </span>
+                      <span className="text-[14px] leading-relaxed text-[#D1D5DB] group-hover:text-white transition-colors flex-1 pt-0.5">
+                        {line.text}
+                      </span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 mt-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280]"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </span>
+                    </div>
                   );
                 }
 
-                if (item.kind === "hook" || item.kind === "cta") {
-                  const accent = item.kind === "hook" ? "#A855F7" : "#10B981";
-                  const text = item.text;
-                  return (
-                    <p
-                      key={li}
-                      className="text-[14px] leading-relaxed font-medium pl-3 py-2 rounded-lg"
-                      style={{ color: accent, borderLeft: `3px solid ${accent}50`, background: `${accent}08` }}
-                    >
-                      {text}
-                    </p>
-                  );
-                }
-
-                // Body — plain readable text
-                if (item.kind === "body") {
-                  return (
-                    <button
-                      key={li}
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(item.text); }}
-                      className="group w-full text-left"
-                    >
-                      <p className="text-[14px] leading-relaxed text-[#D1D5DB] hover:text-white transition-colors">
-                        {item.text}
-                      </p>
-                    </button>
-                  );
-                }
+                return null;
               })}
             </div>
           </div>
