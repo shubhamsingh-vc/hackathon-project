@@ -133,7 +133,7 @@ function HashtagsOutput({ content }: { content: string[] }) {
 
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
-  const colors = ["#A855F7", "#6366F1", "#10B981"];
+  const colors = ["#FF6B6B", "#818CF8", "#10B981"];
 
   return (
     <div>
@@ -183,8 +183,46 @@ function HooksOutput({ content }: { content: string[] }) {
 function CaptionOutput({ content }: { content: string }) {
   const lines = content.split("\n").filter((l) => l.trim() !== "");
   const totalChars = content.length;
+
   const isEmoji = (l: string) => /^[\p{Emoji}\s]+$/u.test(l.trim()) && l.trim().length <= 15;
-  const isCTA = (l: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out)/i.test(l);
+  const isCTA = (l: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out|follow for more)/i.test(l);
+  const isHook = (l: string, idx: number) =>
+    idx === 0 || (idx === 1 && isEmoji(lines[0] ?? ""));
+
+  // Find emoji line index
+  const emojiIdx = lines.findIndex((l, i) => i === 0 && isEmoji(l));
+  // Find first non-emoji line
+  const firstTextIdx = emojiIdx === 0 ? 1 : 0;
+  // CTA = last 2 lines if they contain CTA words
+  const ctaStartIdx = Math.max(firstTextIdx + 1, lines.length - 2);
+
+  // Detect which lines are which type
+  const getLineType = (line: string, i: number) => {
+    if (isCTA(line)) return "cta";
+    if (isHook(line, i)) return "hook";
+    return "body";
+  };
+
+  const sectionAccents = {
+    hook: "#FF6B6B",
+    body: "#818CF8",
+    cta: "#10B981",
+  };
+
+  const sectionLabels = {
+    hook: "Hook",
+    body: "Caption",
+    cta: "Call to Action",
+  };
+
+  const currentSection = (line: string, i: number) => {
+    const t = getLineType(line, i);
+    if (t === "hook") return "hook";
+    if (t === "cta") return "cta";
+    return "body";
+  };
+
+  let lastSection = "";
 
   return (
     <div>
@@ -197,15 +235,19 @@ function CaptionOutput({ content }: { content: string }) {
         <CopyBtn text={content} label="Copy" />
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {lines.map((line, i) => {
+          const type = currentSection(line, i);
+          const accent = sectionAccents[type as keyof typeof sectionAccents];
+          const label = sectionLabels[type as keyof typeof sectionLabels];
           const trimmed = line.trim();
-          const prev = lines[i - 1]?.trim() ?? "";
-          const isEmojiLine = isEmoji(line);
-          const isCTALine = isCTA(trimmed);
+
+          // Show section badge when section changes
+          const showBadge = type !== lastSection;
+          if (type !== lastSection) lastSection = type;
 
           // Emoji opener — large
-          if (isEmojiLine && i === 0) {
+          if (isEmoji(line) && i === 0) {
             return (
               <p key={i} className="text-4xl leading-none mb-1">
                 {trimmed}
@@ -213,29 +255,28 @@ function CaptionOutput({ content }: { content: string }) {
             );
           }
 
-          // CTA — green accent
-          if (isCTALine) {
-            return (
-              <p key={i} className="text-[14px] leading-relaxed font-medium pl-3 py-2 rounded-lg" style={{ color: "#10B981", borderLeft: "3px solid #10B98140" }}>
-                {line}
-              </p>
-            );
-          }
-
-          // First text line — slightly larger, brighter
-          if (i === 0 || (i === 1 && isEmoji(lines[0] ?? ""))) {
-            return (
-              <p key={i} className="text-[15px] leading-relaxed font-medium text-[#F3F4F6]">
-                {line}
-              </p>
-            );
-          }
-
-          // Body
           return (
-            <p key={i} className="text-[14px] leading-relaxed text-[#D1D5DB]">
-              {line}
-            </p>
+            <div key={i}>
+              {showBadge && (
+                <div className="flex items-center gap-2 mt-4 mb-2">
+                  <div
+                    className="flex items-center gap-2 px-3 py-1 rounded-lg"
+                    style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accent }}>
+                      {label}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <p
+                className="text-[14px] leading-relaxed pl-1"
+                style={{ color: type === "cta" ? "#10B981" : type === "hook" ? "#F3F4F6" : "#D1D5DB" }}
+              >
+                {line}
+              </p>
+            </div>
           );
         })}
       </div>
@@ -250,12 +291,12 @@ type ScriptLine =
   | { kind: "scene"; text: string };
 
 const SECTION_META: Record<string, { accent: string; label: string; secPerLine: number }> = {
-  HOOK: { accent: "#A855F7", label: "Hook", secPerLine: 3 },
+  HOOK: { accent: "#FF6B6B", label: "Hook", secPerLine: 3 },
   CTA: { accent: "#10B981", label: "Call to Action", secPerLine: 2 },
-  INTRO: { accent: "#6366F1", label: "Intro", secPerLine: 4 },
+  INTRO: { accent: "#818CF8", label: "Intro", secPerLine: 4 },
   OUTRO: { accent: "#F59E0B", label: "Outro", secPerLine: 3 },
-  BODY: { accent: "#8B5CF6", label: "Script", secPerLine: 5 },
-  SCRIPT: { accent: "#8B5CF6", label: "Script", secPerLine: 5 },
+  BODY: { accent: "#6366F1", label: "Script", secPerLine: 5 },
+  SCRIPT: { accent: "#6366F1", label: "Script", secPerLine: 5 },
 };
 
 function parseScriptItems(content: string): ScriptLine[] {
@@ -319,20 +360,20 @@ function parseScriptItems(content: string): ScriptLine[] {
 
 function SectionBadge({ label, accent, timestamp }: { label: string; accent: string; timestamp?: string }) {
   return (
-    <div className="flex items-center gap-3 mb-3">
+    <div className="flex items-center gap-2 mb-3">
       <div
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
         style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
       >
-        <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
-        <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: accent }}>
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: accent }}>
           {label}
         </span>
       </div>
       {timestamp && (
         <span
-          className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg"
-          style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
+          className="text-[10px] font-mono font-bold px-2 py-0.5 rounded"
+          style={{ background: `${accent}10`, color: accent, border: `1px solid ${accent}20` }}
         >
           {timestamp}
         </span>
@@ -342,6 +383,7 @@ function SectionBadge({ label, accent, timestamp }: { label: string; accent: str
 }
 
 function ScriptOutput({ content }: { content: string }) {
+  const [copiedLine, setCopiedLine] = useState<number | null>(null);
   const items = parseScriptItems(content);
   const totalChars = content.length;
 
@@ -361,13 +403,28 @@ function ScriptOutput({ content }: { content: string }) {
           {rawLines.map((line, i) => {
             const ts = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
             secs += 4;
+            const isCopied = copiedLine === i;
             return (
-              <div key={i} className="flex items-start gap-3 py-1.5 px-2 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
-                onClick={() => navigator.clipboard.writeText(line.trim())}>
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0 mt-0.5" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
+              <div
+                key={i}
+                className="group flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/[0.03] transition-all cursor-pointer"
+                onClick={() => {
+                  navigator.clipboard.writeText(line.trim());
+                  setCopiedLine(i);
+                  setTimeout(() => setCopiedLine(null), 1500);
+                }}
+              >
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                   {ts}
                 </span>
-                <span className="text-[14px] leading-relaxed text-[#D1D5DB]">{line.trim()}</span>
+                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981]" : "text-[#D1D5DB] group-hover:text-white"}`}>
+                  {isCopied ? "Copied!" : line.trim()}
+                </span>
+                {isCopied ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" className="shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                )}
               </div>
             );
           })}
@@ -438,28 +495,43 @@ function ScriptOutput({ content }: { content: string }) {
 
                 // Spoken line: timestamp + text
                 if (line.kind === "spoken") {
+                  const lineKey = `${si}-${li}`;
+                  const isCopied = copiedLine === li;
                   return (
                     <div
                       key={li}
                       className="group flex items-start gap-3 py-2.5 px-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(line.text); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(line.text);
+                        setCopiedLine(li);
+                        setTimeout(() => setCopiedLine(null), 1500);
+                      }}
                     >
                       <span
                         className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
                         style={{
-                          background: `${section.accent}12`,
-                          color: `${section.accent}99`,
-                          border: `1px solid ${section.accent}20`,
+                          background: isCopied ? "rgba(16,185,129,0.15)" : `${section.accent}12`,
+                          color: isCopied ? "#10B981" : `${section.accent}99`,
+                          border: `1px solid ${isCopied ? "rgba(16,185,129,0.3)" : `${section.accent}20`}`,
                         }}
                       >
-                        {line.timestamp}
+                        {isCopied ? "✓" : line.timestamp}
                       </span>
-                      <span className="text-[14px] leading-relaxed text-[#D1D5DB] group-hover:text-white transition-colors flex-1 pt-0.5">
-                        {line.text}
+                      <span className={`text-[14px] leading-relaxed flex-1 pt-0.5 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#D1D5DB] group-hover:text-white"}`}>
+                        {isCopied ? "Copied to clipboard!" : line.text}
                       </span>
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 mt-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#6B7280]"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                      </span>
+                      {!isCopied && (
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 mt-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </span>
+                      )}
+                      {isCopied && (
+                        <span className="shrink-0 mt-1">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      )}
                     </div>
                   );
                 }
