@@ -4,12 +4,6 @@ import { buildCreatorContext } from "@/lib/creatorContext";
 
 const MODEL = "claude-sonnet-4-6";
 
-const INSTRUCTIONS = `IMPORTANT: Follow this EXACT output format. No preamble. No explanation. No markdown. Just the hashtags.`;
-
-/**
- * HASHTAGS format — always space-separated single line:
- * #tag1 #tag2 #tag3 #tag4...
- */
 export async function POST(req: NextRequest) {
   try {
     const { topic, platform, count = 20, creatorProfile } = await req.json();
@@ -19,37 +13,21 @@ export async function POST(req: NextRequest) {
     }
 
     const platformContext: Record<string, string> = {
-      instagram: "Instagram — up to 30 hashtags, mix of broad reach and niche-specific",
-      youtube: "YouTube Shorts — 5-10 targeted tags, topic-focused",
-      tiktok: "TikTok — 3-5 viral tags plus 5-8 niche tags",
+      instagram: "Instagram — up to 30 hashtags, broad reach + niche mix",
+      youtube: "YouTube Shorts — 5-10 targeted tags",
+      tiktok: "TikTok — 3-5 viral tags plus niche tags",
     };
 
     const profileContext = buildCreatorContext(creatorProfile);
 
-    const prompt = `${INSTRUCTIONS}
-
-You are a hashtag strategist. Generate exactly ${count} relevant hashtags for ${platform} content about "${topic}".
+    const prompt = `Generate ${count} relevant hashtags for ${platform} content about "${topic}".
 ${profileContext}
 Platform: ${platformContext[platform] || platform}
 
-Output format — output ONLY hashtags, nothing else:
-#tag1 #tag2 #tag3 #tag4...
-
 Rules:
-- Mix of 20% trending/viral tags (#fyp #foryou #viral) and 80% topic-specific tags
-- Each hashtag starts with #
-- All tags are space-separated on ONE single line
-- No commas, no line breaks between tags
-- No preamble text like "Here are the hashtags:"
-- No explanations or labels
-- Tags should be specific to the topic, not generic
-- Include 2-3 evergreen tags for the platform
-- Output ONLY the hashtags on one line
-
-Example correct output:
-#fitness #fitnessmotivation #workout #gym #fit #healthylifestyle #foryou #viral #gains #losingweight
-
-Output your hashtags now (one line, space-separated, nothing else):`;
+- Mix of trending (#fyp #foryou #viral) and topic-specific tags
+- Space-separated, start each with #
+- No preamble, output only the hashtags`;
 
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 150);
     const rawText = extractText(response);
@@ -58,7 +36,6 @@ Output your hashtags now (one line, space-separated, nothing else):`;
       throw new Error("AI returned an empty response. Please try again.");
     }
 
-    // Parse: extract all #hashtags from any format (multi-line, comma-separated, etc.)
     const hashtags = rawText
       .split(/[\s,]+/)
       .map((tag: string) => tag.trim())

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -17,54 +17,6 @@ interface ResultCardProps {
   };
   duration?: string;
   onRegenerate?: (newContent: string | string[]) => void;
-}
-
-// ─── Shimmer Gradient Border wrapper ───
-function ShimmerBorder({ accent, children }: { accent: string; children: React.ReactNode }) {
-  return (
-    <div
-      className="relative rounded-2xl overflow-hidden"
-      style={{
-        background: "#0A0A0A",
-        boxShadow: `0 0 0 1px ${accent}15, 0 8px 40px rgba(0,0,0,0.6), 0 0 60px ${accent}08`,
-      }}
-    >
-      {/* Animated shimmer line at top */}
-      <div
-        className="absolute top-0 left-0 right-0 h-[2px] z-10"
-        style={{
-          background: `linear-gradient(90deg, transparent 0%, ${accent}60 40%, ${accent} 50%, ${accent}60 60%, transparent 100%)`,
-          backgroundSize: "200% 100%",
-          animation: "shimmer 2.5s ease-in-out infinite",
-        }}
-      />
-      {/* Bottom glow */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px z-10"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}20, transparent)` }}
-      />
-      {/* Corner accent dots */}
-      <div
-        className="absolute top-0 left-0 w-16 h-16 z-10 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 0% 0%, ${accent}30 0%, transparent 70%)`,
-        }}
-      />
-      <div
-        className="absolute top-0 right-0 w-16 h-16 z-10 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 100% 0%, ${accent}30 0%, transparent 70%)`,
-        }}
-      />
-      <style jsx>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
-      <div className="relative z-[1]">{children}</div>
-    </div>
-  );
 }
 
 // ─── Reusable Copy Button ───
@@ -88,19 +40,24 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-300 cursor-pointer ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 cursor-pointer ${
         copied
-          ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border-[rgba(16,185,129,0.3)]"
-          : "bg-white/5 border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 hover:bg-white/8"
+          ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]"
+          : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
       }`}
     >
       {copied ? (
-        <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied</>
+        <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied</>
       ) : (
-        <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{label || "Copy"}</>
+        <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>{label || "Copy"}</>
       )}
     </button>
   );
+}
+
+// ─── Top accent bar for each content type ───
+function TopBar({ color }: { color: string }) {
+  return <div className="h-px w-full mb-5" style={{ background: `linear-gradient(90deg, transparent, ${color}60, ${color}90, ${color}60, transparent)` }} />;
 }
 
 // ─── Hashtags Output ───
@@ -109,230 +66,115 @@ function HashtagsOutput({ content }: { content: string[] }) {
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
 
-  const categorize = (tag: string) => {
+  const catOf = (tag: string) => {
     const t = tag.toLowerCase();
-    const trending = ["fyp", "foryou", "foryoupage", "viral", "trending", "explore", "reels", "shorts", "tiktok", "fypシ", "シ"];
-    if (trending.some((tr) => t.includes(tr))) return "trending";
-    if (tag.length > 16) return "niche";
-    return "regular";
+    if (["fyp", "foryou", "foryoupage", "viral", "trending", "explore", "reels", "shorts", "tiktok", "fypシ"].some((tr) => t.includes(tr))) return "trending";
+    return tag.length > 16 ? "niche" : "regular";
   };
 
-  const trending = content.filter((t) => categorize(t) === "trending");
-  const niche = content.filter((t) => categorize(t) === "niche");
-  const regular = content.filter((t) => categorize(t) === "regular");
-
-  const catMeta: Record<string, { accent: string; bg: string; label: string; icon: string }> = {
-    trending: { accent: "#F87171", bg: "rgba(239,68,68,0.07)", label: "Trending", icon: "🔥" },
-    regular: { accent: "#A855F7", bg: "rgba(168,85,247,0.07)", label: "Popular", icon: "⭐" },
-    niche: { accent: "#34D399", bg: "rgba(16,185,129,0.07)", label: "Niche", icon: "🎯" },
-  };
-
-  const TagBadge = ({ tag }: { tag: string }) => {
-    const cat = categorize(tag);
-    const meta = catMeta[cat];
-    const isCopied = copiedTag === tag;
-
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          navigator.clipboard.writeText(tag);
-          setCopiedTag(tag);
-          setTimeout(() => setCopiedTag(null), 1500);
-        }}
-        className="relative px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap"
-        style={{
-          background: meta.bg,
-          border: `1px solid ${meta.accent}30`,
-          color: meta.accent,
-          boxShadow: `0 0 0 0 ${meta.accent}00`,
-        }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLButtonElement;
-          el.style.boxShadow = `0 0 16px ${meta.accent}25, 0 4px 12px rgba(0,0,0,0.4)`;
-          el.style.transform = "translateY(-2px) scale(1.02)";
-          el.style.borderColor = `${meta.accent}50`;
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLButtonElement;
-          el.style.boxShadow = `0 0 0 0 ${meta.accent}00`;
-          el.style.transform = "translateY(0) scale(1)";
-          el.style.borderColor = `${meta.accent}30`;
-        }}
-      >
-        {isCopied ? (
-          <span className="flex items-center gap-1">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Copied
-          </span>
-        ) : (
-          tag
-        )}
-      </button>
-    );
+  const byCat = (cat: string) => content.filter((t) => catOf(t) === cat);
+  const catStyle: Record<string, { accent: string; label: string }> = {
+    trending: { accent: "#F87171", label: "Trending" },
+    regular: { accent: "#A855F7", label: "Popular" },
+    niche: { accent: "#34D399", label: "Niche" },
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.1)" }}>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px] font-bold"
-            style={{
-              background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.08))",
-              color: "#A855F7",
-              border: "1px solid rgba(168,85,247,0.2)",
-              boxShadow: "0 0 20px rgba(168,85,247,0.15)",
-            }}
-          >
-            #
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hashtags</div>
-            <div className="text-[11px] text-[#6B7280]">{content.length} tags · tap to copy</div>
-          </div>
+    <div>
+      <TopBar color="#A855F7" />
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#A855F7]">#{content.length} Hashtags</span>
         </div>
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-300 ${
-            copiedAll
-              ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]"
-              : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
+            copiedAll ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
           }`}
         >
-          {copiedAll ? (
-            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
-          ) : (
-            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
-          )}
+          {copiedAll ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied</> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>}
         </button>
       </div>
 
-      {/* Tag Groups */}
-      {(["trending", "regular", "niche"] as const).map((cat) => {
-        const tags = cat === "trending" ? trending : cat === "regular" ? regular : niche;
-        if (tags.length === 0) return null;
-        const meta = catMeta[cat];
-        return (
-          <div key={cat} className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-[13px]">{meta.icon}</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</span>
-              <div className="flex-1 h-px" style={{ background: `${meta.accent}15` }} />
-              <span className="text-[10px] font-mono" style={{ color: `${meta.accent}60` }}>{tags.length}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag, i) => <TagBadge key={i} tag={tag} />)}
-            </div>
-          </div>
-        );
-      })}
+      <div className="flex flex-wrap gap-2">
+        {content.map((tag, i) => {
+          const cat = catOf(tag);
+          const s = catStyle[cat];
+          const isCopied = copiedTag === tag;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigator.clipboard.writeText(tag);
+                setCopiedTag(tag);
+                setTimeout(() => setCopiedTag(null), 1500);
+              }}
+              className="px-3 py-1.5 rounded-full text-[12px] font-medium border border-white/8 text-[#9CA3AF] hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
+            >
+              {isCopied ? (
+                <span className="flex items-center gap-1" style={{ color: "#10B981" }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span className="text-[10px] uppercase tracking-wider">Copied</span>
+                </span>
+              ) : (
+                <span style={{ color: s.accent }}>{tag}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
-  const hookMeta = [
-    { label: "Opening Hook", icon: "🎯", accent: "#A855F7", glow: "rgba(168,85,247,0.25)", bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.15)" },
-    { label: "Stat Hook", icon: "📊", accent: "#F59E0B", glow: "rgba(245,158,11,0.25)", bg: "rgba(245,158,11,0.05)", border: "rgba(245,158,11,0.15)" },
-    { label: "Pattern Hook", icon: "⚡", accent: "#10B981", glow: "rgba(16,185,129,0.25)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
-  ];
-
-  const detectHookType = (hook: string) => {
-    // Stat/number hook
-    if (/\d+%|\d+K|\$\d|\d+\s*(people|users|followers|views|million|billion|hours|days)/i.test(hook)) return 1;
-    // Pattern interrupt / contrast
-    if (/but|however|except|unlike|difference between|most people|everyone thinks/i.test(hook)) return 2;
-    return 0; // Opening hook (question, bold statement)
-  };
+  const colors = ["#A855F7", "#6366F1", "#10B981"];
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3 pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.08)" }}>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-[#A855F7]">Opening Hooks</div>
-        <div className="flex-1 h-px" style={{ background: "rgba(168,85,247,0.08)" }} />
-        <span className="text-[10px] text-[#6B7280]">{content.length} options · ranked best to least</span>
+    <div>
+      <TopBar color="#A855F7" />
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#A855F7]">{content.length} Opening Hooks</span>
+        <span className="text-[11px] text-[#6B7280]">— tap to copy</span>
       </div>
 
-      {content.map((hook, i) => {
-        const hookTypeIdx = detectHookType(hook);
-        const meta = hookMeta[hookTypeIdx];
-
-        return (
-          <div
-            key={i}
-            className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${meta.bg}, transparent)`,
-              border: `1px solid ${meta.border}`,
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLDivElement;
-              el.style.borderColor = `${meta.accent}40`;
-              el.style.boxShadow = `0 0 30px ${meta.glow}, inset 0 1px 0 ${meta.accent}20`;
-              el.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLDivElement;
-              el.style.borderColor = meta.border;
-              el.style.boxShadow = "none";
-              el.style.transform = "translateY(0)";
-            }}
-          >
-            {/* Ambient glow */}
-            <div
-              className="absolute bottom-0 left-0 w-32 h-32 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, ${meta.glow} 0%, transparent 70%)`, opacity: 0.5 }}
-            />
-
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-2.5">
-                {/* Big rank number */}
-                <div
-                  className="w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold"
-                  style={{
-                    background: `linear-gradient(135deg, ${meta.accent}25, ${meta.accent}10)`,
-                    border: `1px solid ${meta.accent}30`,
-                    boxShadow: `0 0 15px ${meta.accent}20`,
-                    color: meta.accent,
-                  }}
-                >
-                  <span className="text-[16px] leading-none">{i + 1}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px]" style={{ filter: `drop-shadow(0 0 4px ${meta.accent})` }}>{meta.icon}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</span>
-                </div>
-              </div>
-              <CopyBtn text={hook} />
-            </div>
-
-            {/* Hook text */}
-            <p
-              className="text-[15px] leading-relaxed font-medium relative z-10 pr-2"
-              style={{
-                color: "#E5E7EB",
-                textShadow: `0 0 30px ${meta.glow}`,
-              }}
+      <div className="space-y-3">
+        {content.map((hook, i) => {
+          const color = colors[i % colors.length];
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(hook); }}
+              className="group w-full text-left rounded-xl p-5 border border-white/8 hover:border-white/15 transition-all duration-200 relative overflow-hidden"
+              style={{ background: "rgba(255,255,255,0.02)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.02)"; }}
             >
-              {hook}
-            </p>
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: color }} />
 
-            {/* Bottom glow line */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{ background: `linear-gradient(90deg, transparent, ${meta.accent}60, transparent)` }}
-            />
-          </div>
-        );
-      })}
+              {/* Number */}
+              <div className="flex items-start gap-4 pl-3">
+                <span
+                  className="text-[20px] font-bold flex-shrink-0 leading-none mt-0.5"
+                  style={{ color, opacity: 0.5 }}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-[14px] leading-relaxed text-[#E5E7EB] flex-1 pt-0.5 group-hover:text-white transition-colors">
+                  {hook}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -341,86 +183,57 @@ function HooksOutput({ content }: { content: string[] }) {
 function CaptionOutput({ content }: { content: string }) {
   const lines = content.split("\n").filter((l) => l.trim() !== "");
   const totalChars = content.length;
-
-  // Detect caption structure
-  const isEmoji = (line: string) => /^[\p{Emoji}\s]+$/u.test(line.trim()) && line.trim().length <= 15;
-  const isCTA = (line: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out|link\b)/i.test(line);
-  const isQuestion = (line: string) => /^(did you|what if|have you ever|why do|i tried|here'?s|stop|can you)/i.test(line.trim()) || line.trim().endsWith("?");
+  const isEmoji = (l: string) => /^[\p{Emoji}\s]+$/u.test(l.trim()) && l.trim().length <= 15;
+  const isCTA = (l: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out)/i.test(l);
 
   return (
-    <div className="space-y-1">
-      {/* Header */}
-      <div className="flex items-center gap-4 pb-4 mb-4" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[14px]"
-            style={{
-              background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.06))",
-              color: "#818CF8",
-              border: "1px solid rgba(99,102,241,0.2)",
-              boxShadow: "0 0 20px rgba(99,102,241,0.15)",
-            }}
-          >
-            ✍
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#6366F1" }}>Caption</div>
-            <div className="text-[11px] text-[#6B7280]">{totalChars} chars</div>
-          </div>
+    <div>
+      <TopBar color="#6366F1" />
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#6366F1]">Caption</span>
+          <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <CopyBtn text={content} label="Copy" />
-        </div>
+        <CopyBtn text={content} label="Copy" />
       </div>
 
-      {/* Caption sections */}
       <div className="space-y-3">
         {lines.map((line, i) => {
           const trimmed = line.trim();
+          const prev = lines[i - 1]?.trim() ?? "";
+          const isEmojiLine = isEmoji(line);
+          const isCTALine = isCTA(trimmed);
 
-          // Line 1: Emoji opener
-          if (i === 0 && isEmoji(line)) {
+          // Emoji opener — large
+          if (isEmojiLine && i === 0) {
             return (
-              <p key={i} className="text-4xl leading-none" style={{ filter: "drop-shadow(0 0 12px rgba(168,85,247,0.5))" }}>
+              <p key={i} className="text-4xl leading-none mb-1">
                 {trimmed}
               </p>
             );
           }
 
-          // CTA — highlighted green
-          if (isCTA(trimmed)) {
+          // CTA — green accent
+          if (isCTALine) {
             return (
-              <div key={i} className="rounded-xl px-4 py-3" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
-                </div>
-                <p className="text-[14px] leading-relaxed font-medium" style={{ color: "#10B981", textShadow: "0 0 20px rgba(16,185,129,0.25)" }}>
-                  {line}
-                </p>
-              </div>
+              <p key={i} className="text-[14px] leading-relaxed font-medium pl-3 py-2 rounded-lg" style={{ color: "#10B981", borderLeft: "3px solid #10B98140" }}>
+                {line}
+              </p>
             );
           }
 
-          // Line 1 (or first non-emoji): Hook/attention-grabber
+          // First text line — slightly larger, brighter
           if (i === 0 || (i === 1 && isEmoji(lines[0] ?? ""))) {
-            const isQ = isQuestion(trimmed);
             return (
-              <div key={i} className="rounded-xl px-4 py-3" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(168,85,247,0.15)", color: "#A855F7" }}>{isQ ? "?" : "!"}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>{isQ ? "Question Hook" : "Hook"}</span>
-                </div>
-                <p className="text-[15px] leading-relaxed font-medium" style={{ color: "#E5E7EB", textShadow: "0 0 20px rgba(168,85,247,0.2)" }}>
-                  {line}
-                </p>
-              </div>
+              <p key={i} className="text-[15px] leading-relaxed font-medium text-[#F3F4F6]">
+                {line}
+              </p>
             );
           }
 
-          // Body — flowing readable text
+          // Body
           return (
-            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#D1D5DB", paddingLeft: "2px" }}>
+            <p key={i} className="text-[14px] leading-relaxed text-[#D1D5DB]">
               {line}
             </p>
           );
@@ -482,7 +295,7 @@ function parseScriptItems(content: string): ScriptItem[] {
     const stripped = origLine.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*/i, "").trim();
     if (!stripped) continue;
 
-    const isCTA = /\b(subscribe|follow|comment|share|save|link in bio|like|hit|check out|visit|tap|dm|tag)\b/i.test(stripped);
+    const isCTA = /\b(Subscribe|follow|comment|share|save|link in bio|like|hit|check out|visit|tap|dm|tag)\b/i.test(stripped);
     if (isCTA) { items.push({ kind: "cta", text: stripped }); continue; }
 
     const isHook =
@@ -505,172 +318,118 @@ function ScriptOutput({ content }: { content: string }) {
     const rawLines = content.split("\n").filter((l) => l.trim());
     if (rawLines.length === 0) return null;
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))", color: "#A78BFA", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 0 20px rgba(139,92,246,0.15)" }}>✍</div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Script</div>
-            <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
-          </div>
-          <div className="ml-auto"><CopyBtn text={content} label="Copy Script" /></div>
+      <div>
+        <TopBar color="#8B5CF6" />
+        <div className="flex items-center justify-between mb-5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B5CF6]">Script · {totalChars} chars</span>
+          <CopyBtn text={content} label="Copy" />
         </div>
-        {rawLines.map((line, i) => (
-          <p key={i} className="text-[15px] text-[#E5E7EB] leading-relaxed">{line.trim()}</p>
-        ))}
+        <div className="space-y-2">
+          {rawLines.map((line, i) => (
+            <p key={i} className="text-[14px] leading-relaxed text-[#D1D5DB]">{line.trim()}</p>
+          ))}
+        </div>
       </div>
     );
   }
 
-  // Group items into sections: each section has a label + body of items
-  type Section = { label: string; accent: string; bg: string; glow: string; icon: string; items: ScriptItem[] };
+  const metaFor = (label: string) => {
+    const m: Record<string, { accent: string; label: string }> = {
+      Hook: { accent: "#A855F7", label: "Hook" },
+      "Call to Action": { accent: "#10B981", label: "Call to Action" },
+      INTRO: { accent: "#6366F1", label: "Intro" },
+      OUTRO: { accent: "#F59E0B", label: "Outro" },
+    };
+    return m[label] ?? { accent: "#8B5CF6", label: "Body" };
+  };
+
+  // Group into sections
+  type Section = { label: string; accent: string; items: ScriptItem[] };
   const sections: Section[] = [];
   let current: Section | null = null;
-
-  const metaFor = (label: string) => {
-    const map: Record<string, { accent: string; bg: string; glow: string; icon: string }> = {
-      Hook: { accent: "#A855F7", bg: "rgba(168,85,247,0.1)", glow: "rgba(168,85,247,0.2)", icon: "⚡" },
-      "Call to Action": { accent: "#10B981", bg: "rgba(16,185,129,0.1)", glow: "rgba(16,185,129,0.2)", icon: "→" },
-      INTRO: { accent: "#6366F1", bg: "rgba(99,102,241,0.07)", glow: "rgba(99,102,241,0.15)", icon: "▶" },
-      OUTRO: { accent: "#F59E0B", bg: "rgba(245,158,11,0.07)", glow: "rgba(245,158,11,0.15)", icon: "■" },
-    };
-    return map[label] || { accent: "#8B5CF6", bg: "rgba(139,92,246,0.04)", glow: "rgba(139,92,246,0.1)", icon: "◆" };
-  };
 
   for (const item of items) {
     if (item.kind === "divider") {
       if (current) sections.push(current);
-      const meta = metaFor(item.label);
-      current = { label: item.label, accent: meta.accent, bg: meta.bg, glow: meta.glow, icon: meta.icon, items: [] };
+      const m = metaFor(item.label);
+      current = { label: m.label, accent: m.accent, items: [] };
     } else if (current) {
       current.items.push(item);
     } else {
-      // Items before any divider — create a default "Script" section
-      const meta = metaFor("Body");
-      current = { label: "Script", accent: meta.accent, bg: meta.bg, glow: meta.glow, icon: meta.icon, items: [item] };
+      const m = metaFor("Body");
+      current = { label: m.label, accent: m.accent, items: [item] };
     }
   }
   if (current) sections.push(current);
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center gap-4 pb-4 mb-5" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))", color: "#A78BFA", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 0 20px rgba(139,92,246,0.15)" }}>✍</div>
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Script</div>
-          <div className="text-[11px] text-[#6B7280]">{totalChars} characters · {sections.length} sections</div>
-        </div>
-        <div className="ml-auto"><CopyBtn text={content} label="Copy Script" /></div>
+      <TopBar color="#8B5CF6" />
+      <div className="flex items-center justify-between mb-5">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B5CF6]">Script · {totalChars} chars</span>
+        <CopyBtn text={content} label="Copy Script" />
       </div>
 
-      {/* Sections */}
-      <div className="space-y-5">
+      <div className="space-y-4">
         {sections.map((section, si) => (
-          <div key={si} className="space-y-3">
-            {/* Section header badge */}
-            <div className="flex items-center gap-3">
-              <span
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest"
-                style={{
-                  color: section.accent,
-                  background: section.bg,
-                  border: `1px solid ${section.accent}30`,
-                  boxShadow: `0 0 20px ${section.glow}, inset 0 1px 0 ${section.accent}15`,
-                }}
-              >
-                <span className="text-[13px]">{section.icon}</span>
-                {section.label}
-              </span>
-              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${section.accent}20, transparent)` }} />
+          <div key={si}>
+            {/* Section label */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1 h-4 rounded-full" style={{ background: section.accent }} />
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: section.accent }}>{section.label}</span>
             </div>
 
-            {/* Section body — flowing paragraphs, NO bullets */}
-            <div className="space-y-2 pl-1">
+            {/* Items in section */}
+            <div className="space-y-1 pl-3">
               {section.items.map((item, li) => {
-                // Timestamp — inline badge
                 if (item.kind === "timestamp") {
                   return (
                     <div key={li} className="flex items-center gap-2 mt-1">
-                      <span
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono"
-                        style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
-                      >
+                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                         {item.text}
                       </span>
-                      <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.2), transparent)" }} />
+                      <div className="flex-1 h-px" style={{ background: "rgba(99,102,241,0.15)" }} />
                     </div>
                   );
                 }
 
-                // Scene cue — styled italic inline
                 if (item.kind === "scene") {
                   return (
-                    <p key={li} className="text-[13px] italic pl-3 py-1" style={{ color: "rgba(168,85,247,0.55)", borderLeft: `2px solid rgba(168,85,247,0.25)` }}>
+                    <p key={li} className="text-[12px] italic pl-2 py-1" style={{ color: "rgba(168,85,247,0.5)", borderLeft: "2px solid rgba(168,85,247,0.2)" }}>
                       🎬 {item.text}
                     </p>
                   );
                 }
 
-                // Body — pure paragraph, no bullet, no dot, just readable text
-                if (item.kind === "body") {
-                  return (
-                    <div key={li} className="group flex items-start gap-3">
-                      <span className="mt-2 flex-shrink-0 w-2 h-2 rounded-sm opacity-50" style={{ background: section.accent }} />
-                      <p className="text-[15px] leading-relaxed flex-1" style={{ color: "#D1D5DB" }}>
-                        {item.text}
-                      </p>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
-                        <CopyBtn text={item.text} />
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Hook / CTA card — standalone glowing card
                 if (item.kind === "hook" || item.kind === "cta") {
                   const accent = item.kind === "hook" ? "#A855F7" : "#10B981";
-                  const label = item.kind === "hook" ? "Hook" : "Call to Action";
-                  const icon = item.kind === "hook" ? "⚡" : "→";
+                  const text = item.text;
                   return (
-                    <div
+                    <p
                       key={li}
-                      className="group relative rounded-2xl p-5 overflow-hidden"
-                      style={{
-                        background: `linear-gradient(135deg, ${accent}12, ${accent}05)`,
-                        border: `1px solid ${accent}25`,
-                      }}
-                      onMouseEnter={(e) => {
-                        const el = e.currentTarget as HTMLDivElement;
-                        el.style.borderColor = `${accent}50`;
-                        el.style.boxShadow = `0 0 40px ${accent}20, inset 0 1px 0 ${accent}20`;
-                      }}
-                      onMouseLeave={(e) => {
-                        const el = e.currentTarget as HTMLDivElement;
-                        el.style.borderColor = `${accent}25`;
-                        el.style.boxShadow = "none";
-                      }}
+                      className="text-[14px] leading-relaxed font-medium pl-3 py-2 rounded-lg"
+                      style={{ color: accent, borderLeft: `3px solid ${accent}50`, background: `${accent}08` }}
                     >
-                      <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none" style={{ background: `radial-gradient(circle at 100% 0%, ${accent}12 0%, transparent 60%)` }} />
-                      <div className="flex items-center gap-2 mb-2 relative z-10">
-                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold" style={{ background: `${accent}20`, color: accent }}>{icon}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accent }}>{label}</span>
-                      </div>
-                      <div className="flex items-start gap-3 relative z-10">
-                        <span
-                          className="text-[15px] font-semibold leading-relaxed flex-1"
-                          style={{ color: accent, textShadow: `0 0 30px ${accent}30` }}
-                        >
-                          {item.text}
-                        </span>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
-                          <CopyBtn text={item.text} />
-                        </div>
-                      </div>
-                    </div>
+                      {text}
+                    </p>
                   );
                 }
 
-                return null;
+                // Body — plain readable text
+                if (item.kind === "body") {
+                  return (
+                    <button
+                      key={li}
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(item.text); }}
+                      className="group w-full text-left"
+                    >
+                      <p className="text-[14px] leading-relaxed text-[#D1D5DB] hover:text-white transition-colors">
+                        {item.text}
+                      </p>
+                    </button>
+                  );
+                }
               })}
             </div>
           </div>
@@ -684,7 +443,7 @@ function ScriptOutput({ content }: { content: string }) {
 function EditOverlay({ content, type, onSave, onCancel }: { content: string | string[]; type: string; onSave: (newContent: string | string[]) => void; onCancel: () => void }) {
   const isArray = Array.isArray(content);
   const editText = isArray ? content.join("\n") : content;
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(editText);
 
   const handleChange = (val: string) => {
@@ -706,28 +465,28 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full" style={{ background: "#F59E0B", boxShadow: "0 0 8px #F59E0B" }} />
-        <span className="text-[11px] font-bold uppercase tracking-widest text-[#F59E0B]">Editing Mode</span>
+      <div className="h-px w-full mb-5" style={{ background: "linear-gradient(90deg, transparent, #F59E0B60, #F59E0B90, #F59E0B60, transparent)" }} />
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#F59E0B]">Editing</span>
       </div>
       <textarea
         ref={textareaRef}
         value={draft}
         onChange={(e) => handleChange(e.target.value)}
-        className="w-full bg-[rgba(245,158,11,0.04)] border border-[rgba(245,158,11,0.3)] rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed resize-none outline-none focus:border-[rgba(245,158,11,0.6)] transition-colors duration-300"
-        style={{ minHeight: "200px" }}
+        className="w-full bg-white/3 border border-white/10 rounded-xl p-4 text-[14px] text-[#E5E7EB] leading-relaxed resize-none outline-none focus:border-[rgba(245,158,11,0.4)] transition-colors duration-200"
+        style={{ minHeight: "160px" }}
         autoFocus
         placeholder={isArray ? "Enter each item on a new line..." : "Edit your content..."}
       />
       <div className="flex items-center justify-between">
-        <span className="text-[12px] text-[#6B7280]">{draft.length} characters</span>
+        <span className="text-[11px] text-[#6B7280]">{draft.length} chars</span>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-xl text-[13px] font-medium bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/20 transition-all duration-300">
+          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-full text-[12px] font-medium bg-white/4 border border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15 transition-all duration-200">
             Cancel
           </button>
-          <button type="button" onClick={handleSave} className="flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-semibold bg-[rgba(16,185,129,0.15)] border border-[rgba(16,185,129,0.3)] text-[#10B981] hover:bg-[rgba(16,185,129,0.2)] transition-all duration-300">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Save Changes
+          <button type="button" onClick={handleSave} className="flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.25)] text-[#10B981] hover:bg-[rgba(16,185,129,0.18)] transition-all duration-200">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save
           </button>
         </div>
       </div>
@@ -737,11 +496,14 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
 
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
-  hook: { label: "Viral Hook", color: "#A855F7" },
+  hook: { label: "Hook", color: "#A855F7" },
   caption: { label: "Caption", color: "#6366F1" },
   hashtags: { label: "Hashtags", color: "#A855F7" },
   script: { label: "Script", color: "#8B5CF6" },
 };
+
+// Need React import for useRef
+import React from "react";
 
 export default function ResultCard({ type, content: initialContent, platform, tone, topic, creatorProfile, duration, onRegenerate }: ResultCardProps) {
   const { data: session, status } = useSession();
@@ -801,9 +563,9 @@ export default function ResultCard({ type, content: initialContent, platform, to
   };
 
   return (
-    <div>
-      {/* Meta Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow" style={{ borderColor: `${meta.color}40`, color: meta.color, background: `${meta.color}12` }}>{meta.label}</span>
           <span className="eyebrow">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
@@ -817,57 +579,51 @@ export default function ResultCard({ type, content: initialContent, platform, to
             <button
               type="button"
               onClick={handleCopyAll}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-500 ${
-                copiedAll ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]" : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
+                copiedAll ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
               }`}
             >
               {copiedAll ? (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
+                <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
               ) : (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
+                <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
               )}
             </button>
 
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 transition-all duration-500"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-white/4 border border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15 transition-all duration-200"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit
             </button>
 
             {session ? (
-              <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-500 ${
-                saved ? "bg-[rgba(16,185,129,0.15)] text-[#10B981] border border-[rgba(16,185,129,0.3)]" : "bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25"
+              <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
+                saved ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
               }`}>
-                {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
+                {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
               </button>
             ) : (
-              <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-white/5 border border-white/10 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/25 transition-all duration-500">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
+              <button type="button" onClick={() => router.push("/auth/signin")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium bg-white/4 border border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15 transition-all duration-200">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
               </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Content Card */}
+      {/* Content */}
       {editing ? (
-        <ShimmerBorder accent="#F59E0B">
-          <div className="p-7">
-            <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
-          </div>
-        </ShimmerBorder>
+        <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
       ) : (
-        <ShimmerBorder accent={meta.color}>
-          <div className="p-7">
-            {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
-            {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
-            {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
-            {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
-          </div>
-        </ShimmerBorder>
+        <>
+          {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
+          {type === "hook" && Array.isArray(content) && <HooksOutput content={content} />}
+          {type === "caption" && !Array.isArray(content) && <CaptionOutput content={content} />}
+          {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
+        </>
       )}
     </div>
   );
