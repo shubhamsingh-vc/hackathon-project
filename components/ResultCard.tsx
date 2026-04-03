@@ -42,7 +42,7 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
       onClick={handleCopy}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 cursor-pointer ${
         copied
-          ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]"
+          ? "bg-[rgba(96,165,250,0.12)] text-[#60A5FA] border-[rgba(96,165,250,0.25)]"
           : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
       }`}
     >
@@ -61,11 +61,10 @@ function TopBar({ color }: { color: string }) {
 }
 
 // ─── Content highlight palette ───
-// Hook = purple, Body = dark/slate (readable on dark bg), CTA = green
-const HOOK_COLOR    = "#C084FC"; // Purple — hook lines
-const BODY_COLOR    = "#94A3B8"; // Slate — body/script text (readable on dark)
-const CTA_COLOR     = "#34D399"; // Emerald — CTA lines
-const SCRIPT_COLOR  = "#94A3B8"; // Slate — general script body
+const HOOK_COLOR   = "#C084FC"; // Purple — hook lines
+const BODY_COLOR   = "#475569"; // Dark slate — body text
+const CTA_COLOR    = "#60A5FA"; // Blue — CTA lines
+const SCRIPT_COLOR = "#475569"; // Dark slate — script body
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -77,7 +76,6 @@ function HashtagsOutput({ content }: { content: string[] }) {
     return tag.length > 16 ? "niche" : "regular";
   };
 
-  const byCat = (cat: string) => content.filter((t) => catOf(t) === cat);
   const catStyle: Record<string, { accent: string; label: string }> = {
     trending: { accent: "#F87171", label: "Trending" },
     regular: { accent: "#A855F7", label: "Popular" },
@@ -89,16 +87,24 @@ function HashtagsOutput({ content }: { content: string[] }) {
       <TopBar color="#A855F7" />
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#A855F7]">#{content.length} Hashtags</span>
+          {/* HASHTAGS label */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md"
+            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}
+          >
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#A855F7" }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hashtags</span>
+          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">#{content.length}</span>
         </div>
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(allTags); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
-            copiedAll ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
+            copiedAll ? "bg-[rgba(96,165,250,0.12)] text-[#60A5FA] border-[rgba(96,165,250,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
           }`}
         >
-          {copiedAll ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied</> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>}
+          {copiedAll ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied</> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>}
         </button>
       </div>
 
@@ -121,7 +127,7 @@ function HashtagsOutput({ content }: { content: string[] }) {
               className="px-3 py-1.5 rounded-full text-[12px] font-medium border border-white/8 text-[#9CA3AF] hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
             >
               {isCopied ? (
-                <span className="flex items-center gap-1" style={{ color: "#10B981" }}>
+                <span className="flex items-center gap-1" style={{ color: "#60A5FA" }}>
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   <span className="text-[10px] uppercase tracking-wider">Copied</span>
                 </span>
@@ -153,7 +159,7 @@ function HooksOutput({ content }: { content: string[] }) {
               key={i}
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(hook); }}
-              className="group w-full text-left rounded-xl p-5 border border-white/8 hover:border-white/15 transition-all duration-200 relative overflow-hidden"
+              className="group w-full text-left rounded-xl p-4 border border-white/8 hover:border-white/15 transition-all duration-200 relative overflow-hidden"
               style={{ background: "rgba(255,255,255,0.02)" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.02)"; }}
@@ -161,20 +167,31 @@ function HooksOutput({ content }: { content: string[] }) {
               {/* Left accent bar — purple */}
               <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: "#C084FC" }} />
 
-              {/* Number */}
-              <div className="flex items-start gap-4 pl-3">
-                <span
-                  className="text-[20px] font-bold flex-shrink-0 leading-none mt-0.5"
-                  style={{ color: "#C084FC", opacity: 0.4 }}
+              <div className="flex items-start gap-4 pl-4">
+                {/* HOOK label */}
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md mt-0.5 flex-shrink-0"
+                  style={{ background: "rgba(192,132,252,0.1)", border: "1px solid rgba(192,132,252,0.25)" }}
                 >
-                  {i + 1}
-                </span>
-                <span
-                  className="text-[15px] leading-relaxed flex-1 pt-0.5 transition-colors"
-                  style={{ color: "#C084FC" }}
-                >
-                  {hook}
-                </span>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C084FC" }} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#C084FC" }}>Hook</span>
+                </div>
+
+                {/* Number + text */}
+                <div className="flex items-start gap-3 flex-1">
+                  <span
+                    className="text-[18px] font-bold flex-shrink-0 leading-none mt-1"
+                    style={{ color: "#C084FC", opacity: 0.35 }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span
+                    className="text-[14px] leading-relaxed pt-0.5"
+                    style={{ color: "#C084FC" }}
+                  >
+                    {hook}
+                  </span>
+                </div>
               </div>
             </button>
           );
@@ -210,15 +227,15 @@ function CaptionOutput({ content }: { content: string }) {
 
   const sectionAccents = {
     hook: "#C084FC",
-    body: "#CBD5E1",
-    cta: "#34D399",
+    body: "#475569",
+    cta: "#60A5FA",
   };
 
-  // Text colors — hook=purple, body=dark/slate, cta=green
+  // Text colors — hook=purple, body=black/dark, cta=blue
   const sectionTextColors = {
     hook: "#C084FC",
-    body: "#94A3B8",
-    cta: "#34D399",
+    body: "#475569",
+    cta: "#60A5FA",
   };
 
   const sectionLabels = {
@@ -304,12 +321,12 @@ type ScriptLine =
   | { kind: "scene"; text: string };
 
 const SECTION_META: Record<string, { accent: string; label: string; secPerLine: number }> = {
-  HOOK:  { accent: "#C084FC", label: "Hook",        secPerLine: 3 },
-  CTA:   { accent: "#34D399", label: "Call to Action", secPerLine: 2 },
-  INTRO: { accent: "#818CF8", label: "Intro",      secPerLine: 4 },
-  OUTRO: { accent: "#34D399", label: "Outro",      secPerLine: 3 },
-  BODY:  { accent: "#818CF8", label: "Script",     secPerLine: 5 },
-  SCRIPT:{ accent: "#818CF8", label: "Script",     secPerLine: 5 },
+  HOOK:  { accent: "#C084FC", label: "Hook",          secPerLine: 3 },
+  CTA:   { accent: "#60A5FA", label: "Call to Action", secPerLine: 2 },
+  INTRO: { accent: "#C084FC", label: "Intro",         secPerLine: 4 },
+  OUTRO: { accent: "#60A5FA", label: "Outro",         secPerLine: 3 },
+  BODY:  { accent: "#475569", label: "Script",         secPerLine: 5 },
+  SCRIPT:{ accent: "#475569", label: "Script",         secPerLine: 5 },
 };
 
 function parseScriptItems(content: string): ScriptLine[] {
@@ -465,11 +482,11 @@ function ScriptOutput({ content }: { content: string }) {
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                   {ts}
                 </span>
-                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#94A3B8] group-hover:text-white"}`}>
+                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#60A5FA] font-medium" : "text-[#475569] group-hover:text-white"}`}>
                   {isCopied ? "Copied!" : line.trim()}
                 </span>
                 {isCopied ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" className="shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2.5" className="shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                 ) : (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 )}
@@ -560,17 +577,17 @@ function ScriptOutput({ content }: { content: string }) {
                       <span
                         className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0 mt-0.5"
                         style={{
-                          background: isCopied ? "rgba(16,185,129,0.15)" : `${section.accent}12`,
-                          color: isCopied ? "#10B981" : `${section.accent}99`,
-                          border: `1px solid ${isCopied ? "rgba(16,185,129,0.3)" : `${section.accent}20`}`,
+                          background: isCopied ? "rgba(96,165,250,0.15)" : `${section.accent}12`,
+                          color: isCopied ? "#60A5FA" : `${section.accent}99`,
+                          border: `1px solid ${isCopied ? "rgba(96,165,250,0.3)" : `${section.accent}20`}`,
                         }}
                       >
                         {isCopied ? "✓" : line.timestamp}
                       </span>
                       <span className={`text-[14px] leading-relaxed flex-1 pt-0.5 transition-colors ${isCopied ? "font-medium" : ""}`}
-                        style={isCopied ? { color: "#10B981" } : { color: section.accent + "CC" }}
+                        style={isCopied ? { color: "#60A5FA" } : { color: section.accent + "CC" }}
                       >
-                        {isCopied ? "Copied to clipboard!" : line.text}
+                        {isCopied ? "Copied!" : line.text}
                       </span>
                       {!isCopied && (
                         <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 mt-1">
@@ -579,7 +596,7 @@ function ScriptOutput({ content }: { content: string }) {
                       )}
                       {isCopied && (
                         <span className="shrink-0 mt-1">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
                       )}
                     </div>
@@ -737,11 +754,11 @@ export default function ResultCard({ type, content: initialContent, platform, to
               type="button"
               onClick={handleCopyAll}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
-                copiedAll ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
+                copiedAll ? "bg-[rgba(96,165,250,0.12)] text-[#60A5FA] border-[rgba(96,165,250,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
               }`}
             >
               {copiedAll ? (
-                <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
+                <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!</>
               ) : (
                 <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy All</>
               )}
@@ -758,7 +775,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
 
             {session ? (
               <button type="button" onClick={handleSave} disabled={saving} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all duration-200 ${
-                saved ? "bg-[rgba(16,185,129,0.12)] text-[#10B981] border-[rgba(16,185,129,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
+                saved ? "bg-[rgba(96,165,250,0.12)] text-[#60A5FA] border-[rgba(96,165,250,0.25)]" : "bg-white/4 border-white/8 text-[#6B7280] hover:text-[#FAFAFA] hover:border-white/15"
               }`}>
                 {saving ? <><span className="spinner !w-3 !h-3" />Saving...</> : saved ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved!</> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</>}
               </button>
