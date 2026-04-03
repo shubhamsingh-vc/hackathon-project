@@ -61,11 +61,11 @@ function TopBar({ color }: { color: string }) {
 }
 
 // ─── Content highlight palette ───
-// Hook = purple (attention-grabbing), Body = near-white (neutral readable), CTA = green (action)
-const HOOK_COLOR = "#C084FC";   // Purple — hook lines
-const BODY_COLOR = "#CBD5E1";   // Near-white/slate — body text
-const CTA_COLOR  = "#34D399";   // Emerald — CTA lines
-const SCRIPT_COLOR = "#818CF8"; // Indigo — general script body
+// Hook = purple, Body = dark/slate (readable on dark bg), CTA = green
+const HOOK_COLOR    = "#C084FC"; // Purple — hook lines
+const BODY_COLOR    = "#94A3B8"; // Slate — body/script text (readable on dark)
+const CTA_COLOR     = "#34D399"; // Emerald — CTA lines
+const SCRIPT_COLOR  = "#94A3B8"; // Slate — general script body
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -214,10 +214,10 @@ function CaptionOutput({ content }: { content: string }) {
     cta: "#34D399",
   };
 
-  // Text colors — hook=purple, body=neutral, cta=green
+  // Text colors — hook=purple, body=dark/slate, cta=green
   const sectionTextColors = {
     hook: "#C084FC",
-    body: "#CBD5E1",
+    body: "#94A3B8",
     cta: "#34D399",
   };
 
@@ -465,7 +465,7 @@ function ScriptOutput({ content }: { content: string }) {
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                   {ts}
                 </span>
-                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#CBD5E1] group-hover:text-white"}`}>
+                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#94A3B8] group-hover:text-white"}`}>
                   {isCopied ? "Copied!" : line.trim()}
                 </span>
                 {isCopied ? (
