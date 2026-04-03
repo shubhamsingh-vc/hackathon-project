@@ -60,7 +60,16 @@ function TopBar({ color }: { color: string }) {
   return <div className="h-px w-full mb-5" style={{ background: `linear-gradient(90deg, transparent, ${color}60, ${color}90, ${color}60, transparent)` }} />;
 }
 
-// ─── Hashtags Output ───
+// ─── Content accent palette ───
+const CONTENT_COLORS = {
+  hook: "#FF6B6B",      // Coral red — attention-grabbing, hook energy
+  caption: "#818CF8",   // Indigo — readable, calm body text
+  cta: "#10B981",       // Emerald — action, green CTA
+  script: "#6366F1",    // Indigo — video script body
+  hashtags: "#A855F7",  // Purple — hashtags
+  scriptHook: "#FF6B6B",  // Script HOOK section text
+  scriptCTA: "#10B981",   // Script CTA section text
+} as const;
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -163,11 +172,14 @@ function HooksOutput({ content }: { content: string[] }) {
               <div className="flex items-start gap-4 pl-3">
                 <span
                   className="text-[20px] font-bold flex-shrink-0 leading-none mt-0.5"
-                  style={{ color, opacity: 0.5 }}
+                  style={{ color, opacity: 0.4 }}
                 >
                   {i + 1}
                 </span>
-                <span className="text-[14px] leading-relaxed text-[#E5E7EB] flex-1 pt-0.5 group-hover:text-white transition-colors">
+                <span
+                  className="text-[15px] leading-relaxed flex-1 pt-0.5 transition-colors group-hover:brightness-125"
+                  style={{ color }}
+                >
                   {hook}
                 </span>
               </div>
@@ -209,6 +221,13 @@ function CaptionOutput({ content }: { content: string }) {
     cta: "#10B981",
   };
 
+  // Text colors for caption lines — body gets indigo pop
+  const sectionTextColors = {
+    hook: "#F3F4F6",
+    body: "#A5B4FC",
+    cta: "#6EE7B7",
+  };
+
   const sectionLabels = {
     hook: "Hook",
     body: "Caption",
@@ -240,6 +259,7 @@ function CaptionOutput({ content }: { content: string }) {
           const type = currentSection(line, i);
           const accent = sectionAccents[type as keyof typeof sectionAccents];
           const label = sectionLabels[type as keyof typeof sectionLabels];
+          const textColor = sectionTextColors[type as keyof typeof sectionTextColors];
           const trimmed = line.trim();
 
           // Show section badge when section changes
@@ -271,8 +291,8 @@ function CaptionOutput({ content }: { content: string }) {
                 </div>
               )}
               <p
-                className="text-[14px] leading-relaxed pl-1"
-                style={{ color: type === "cta" ? "#10B981" : type === "hook" ? "#F3F4F6" : "#D1D5DB" }}
+                className="text-[14px] leading-relaxed pl-1 transition-colors"
+                style={{ color: textColor }}
               >
                 {line}
               </p>
@@ -452,7 +472,7 @@ function ScriptOutput({ content }: { content: string }) {
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                   {ts}
                 </span>
-                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981]" : "text-[#D1D5DB] group-hover:text-white"}`}>
+                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#818CF8CC] group-hover:text-white"}`}>
                   {isCopied ? "Copied!" : line.trim()}
                 </span>
                 {isCopied ? (
@@ -554,7 +574,9 @@ function ScriptOutput({ content }: { content: string }) {
                       >
                         {isCopied ? "✓" : line.timestamp}
                       </span>
-                      <span className={`text-[14px] leading-relaxed flex-1 pt-0.5 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#D1D5DB] group-hover:text-white"}`}>
+                      <span className={`text-[14px] leading-relaxed flex-1 pt-0.5 transition-colors ${isCopied ? "font-medium" : ""}`}
+                        style={isCopied ? { color: "#10B981" } : { color: section.accent + "CC" }}
+                      >
                         {isCopied ? "Copied to clipboard!" : line.text}
                       </span>
                       {!isCopied && (
@@ -638,10 +660,10 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
 
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
-  hook: { label: "Hook", color: "#A855F7" },
-  caption: { label: "Caption", color: "#6366F1" },
+  hook: { label: "Hook", color: "#FF6B6B" },
+  caption: { label: "Caption", color: "#818CF8" },
   hashtags: { label: "Hashtags", color: "#A855F7" },
-  script: { label: "Script", color: "#8B5CF6" },
+  script: { label: "Script", color: "#6366F1" },
 };
 
 // Need React import for useRef
