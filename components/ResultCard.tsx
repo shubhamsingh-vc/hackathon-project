@@ -60,16 +60,12 @@ function TopBar({ color }: { color: string }) {
   return <div className="h-px w-full mb-5" style={{ background: `linear-gradient(90deg, transparent, ${color}60, ${color}90, ${color}60, transparent)` }} />;
 }
 
-// ─── Content accent palette ───
-const CONTENT_COLORS = {
-  hook: "#FF6B6B",      // Coral red — attention-grabbing, hook energy
-  caption: "#818CF8",   // Indigo — readable, calm body text
-  cta: "#10B981",       // Emerald — action, green CTA
-  script: "#6366F1",    // Indigo — video script body
-  hashtags: "#A855F7",  // Purple — hashtags
-  scriptHook: "#FF6B6B",  // Script HOOK section text
-  scriptCTA: "#10B981",   // Script CTA section text
-} as const;
+// ─── Content highlight palette ───
+// Hook = purple (attention-grabbing), Body = near-white (neutral readable), CTA = green (action)
+const HOOK_COLOR = "#C084FC";   // Purple — hook lines
+const BODY_COLOR = "#CBD5E1";   // Near-white/slate — body text
+const CTA_COLOR  = "#34D399";   // Emerald — CTA lines
+const SCRIPT_COLOR = "#818CF8"; // Indigo — general script body
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -142,19 +138,16 @@ function HashtagsOutput({ content }: { content: string[] }) {
 
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
-  const colors = ["#FF6B6B", "#818CF8", "#10B981"];
-
   return (
     <div>
-      <TopBar color="#A855F7" />
+      <TopBar color="#C084FC" />
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#A855F7]">{content.length} Opening Hooks</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#C084FC]">{content.length} Opening Hooks</span>
         <span className="text-[11px] text-[#6B7280]">— tap to copy</span>
       </div>
 
       <div className="space-y-3">
         {content.map((hook, i) => {
-          const color = colors[i % colors.length];
           return (
             <button
               key={i}
@@ -165,20 +158,20 @@ function HooksOutput({ content }: { content: string[] }) {
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.02)"; }}
             >
-              {/* Left accent bar */}
-              <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: color }} />
+              {/* Left accent bar — purple */}
+              <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: "#C084FC" }} />
 
               {/* Number */}
               <div className="flex items-start gap-4 pl-3">
                 <span
                   className="text-[20px] font-bold flex-shrink-0 leading-none mt-0.5"
-                  style={{ color, opacity: 0.4 }}
+                  style={{ color: "#C084FC", opacity: 0.4 }}
                 >
                   {i + 1}
                 </span>
                 <span
-                  className="text-[15px] leading-relaxed flex-1 pt-0.5 transition-colors group-hover:brightness-125"
-                  style={{ color }}
+                  className="text-[15px] leading-relaxed flex-1 pt-0.5 transition-colors"
+                  style={{ color: "#C084FC" }}
                 >
                   {hook}
                 </span>
@@ -216,16 +209,16 @@ function CaptionOutput({ content }: { content: string }) {
   };
 
   const sectionAccents = {
-    hook: "#FF6B6B",
-    body: "#818CF8",
-    cta: "#10B981",
+    hook: "#C084FC",
+    body: "#CBD5E1",
+    cta: "#34D399",
   };
 
-  // Text colors for caption lines — body gets indigo pop
+  // Text colors — hook=purple, body=neutral, cta=green
   const sectionTextColors = {
-    hook: "#F3F4F6",
-    body: "#A5B4FC",
-    cta: "#6EE7B7",
+    hook: "#C084FC",
+    body: "#CBD5E1",
+    cta: "#34D399",
   };
 
   const sectionLabels = {
@@ -245,7 +238,7 @@ function CaptionOutput({ content }: { content: string }) {
 
   return (
     <div>
-      <TopBar color="#6366F1" />
+      <TopBar color="#C084FC" />
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#6366F1]">Caption</span>
@@ -311,12 +304,12 @@ type ScriptLine =
   | { kind: "scene"; text: string };
 
 const SECTION_META: Record<string, { accent: string; label: string; secPerLine: number }> = {
-  HOOK: { accent: "#FF6B6B", label: "Hook", secPerLine: 3 },
-  CTA: { accent: "#10B981", label: "Call to Action", secPerLine: 2 },
-  INTRO: { accent: "#818CF8", label: "Intro", secPerLine: 4 },
-  OUTRO: { accent: "#F59E0B", label: "Outro", secPerLine: 3 },
-  BODY: { accent: "#6366F1", label: "Script", secPerLine: 5 },
-  SCRIPT: { accent: "#6366F1", label: "Script", secPerLine: 5 },
+  HOOK:  { accent: "#C084FC", label: "Hook",        secPerLine: 3 },
+  CTA:   { accent: "#34D399", label: "Call to Action", secPerLine: 2 },
+  INTRO: { accent: "#818CF8", label: "Intro",      secPerLine: 4 },
+  OUTRO: { accent: "#34D399", label: "Outro",      secPerLine: 3 },
+  BODY:  { accent: "#818CF8", label: "Script",     secPerLine: 5 },
+  SCRIPT:{ accent: "#818CF8", label: "Script",     secPerLine: 5 },
 };
 
 function parseScriptItems(content: string): ScriptLine[] {
@@ -357,7 +350,7 @@ function parseScriptItems(content: string): ScriptLine[] {
     let m = line.match(new RegExp(`^\\*\\*(${SECTION_LABELS})\\*\\*\\s*[:.\\-]?\\s*$`, "i"));
     if (m) {
       const key = m[1].toUpperCase();
-      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      const meta = SECTION_META[key] || { accent: "#818CF8", label: key };
       items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
       pendingTs = undefined;
       continue;
@@ -368,7 +361,7 @@ function parseScriptItems(content: string): ScriptLine[] {
     if (m) {
       const key = m[1].toUpperCase();
       const text = stripContent(m[2]);
-      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      const meta = SECTION_META[key] || { accent: "#818CF8", label: key };
       if (text) {
         items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
         items.push({ kind: "spoken", text, timestamp: pendingTs });
@@ -381,7 +374,7 @@ function parseScriptItems(content: string): ScriptLine[] {
     m = line.match(new RegExp(`^(${SECTION_LABELS})\\s*[:.\\-]?\\s*$`, "i"));
     if (m) {
       const key = m[1].toUpperCase();
-      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      const meta = SECTION_META[key] || { accent: "#818CF8", label: key };
       items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
       pendingTs = undefined;
       continue;
@@ -392,7 +385,7 @@ function parseScriptItems(content: string): ScriptLine[] {
     if (m) {
       const key = m[1].toUpperCase();
       const text = stripContent(m[2]);
-      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      const meta = SECTION_META[key] || { accent: "#818CF8", label: key };
       if (text) {
         items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
         items.push({ kind: "spoken", text, timestamp: pendingTs });
@@ -449,9 +442,9 @@ function ScriptOutput({ content }: { content: string }) {
     let secs = 0;
     return (
       <div>
-        <TopBar color="#8B5CF6" />
+        <TopBar color="#818CF8" />
         <div className="flex items-center justify-between mb-5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B5CF6]">Script · {totalChars} chars</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#818CF8]">Script · {totalChars} chars</span>
           <CopyBtn text={content} label="Copy" />
         </div>
         <div className="space-y-2">
@@ -472,7 +465,7 @@ function ScriptOutput({ content }: { content: string }) {
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
                   {ts}
                 </span>
-                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#818CF8CC] group-hover:text-white"}`}>
+                <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#10B981] font-medium" : "text-[#CBD5E1] group-hover:text-white"}`}>
                   {isCopied ? "Copied!" : line.trim()}
                 </span>
                 {isCopied ? (
@@ -500,7 +493,7 @@ function ScriptOutput({ content }: { content: string }) {
     } else if (current) {
       current.lines.push(item);
     } else {
-      current = { label: "Script", accent: "#8B5CF6", lines: [item] };
+      current = { label: "Script", accent: "#818CF8", lines: [item] };
     }
   }
   if (current) sections.push(current);
@@ -523,9 +516,9 @@ function ScriptOutput({ content }: { content: string }) {
 
   return (
     <div>
-      <TopBar color="#8B5CF6" />
+      <TopBar color="#818CF8" />
       <div className="flex items-center justify-between mb-5">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#8B5CF6]">Script · {totalChars} chars</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#818CF8]">Script · {totalChars} chars</span>
         <CopyBtn text={content} label="Copy Script" />
       </div>
 
@@ -660,10 +653,10 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
 
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
-  hook: { label: "Hook", color: "#FF6B6B" },
-  caption: { label: "Caption", color: "#818CF8" },
+  hook: { label: "Hook", color: "#C084FC" },
+  caption: { label: "Caption", color: "#C084FC" },
   hashtags: { label: "Hashtags", color: "#A855F7" },
-  script: { label: "Script", color: "#6366F1" },
+  script: { label: "Script", color: "#818CF8" },
 };
 
 // Need React import for useRef
