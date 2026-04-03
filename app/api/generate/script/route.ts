@@ -40,7 +40,8 @@ Format: ${format.lines}, ~${format.time}.
 ${platformTips[platform] || platform}
 Structure: HOOK → BODY → CTA.
 [SCENE] cues in brackets. Timestamps [0:00]. Conversational body.
-No camera directions. No preamble. Output only script.`;
+No camera directions. No preamble. Output only script.
+CRITICAL: Do NOT use any markdown formatting (no **bold**, no *italic*, no ## headings). Plain text only.`;
 
     const maxTokens = duration === "long" ? 800 : 400;
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], maxTokens);

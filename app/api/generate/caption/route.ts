@@ -25,7 +25,8 @@ Rules:
 - Body content: value, story, or context
 - End with a clear call to action
 - Strategic line breaks for pacing
-- No hashtags, no markdown
+- Plain text only — NO markdown (no **bold**, no *italic*, no headings)
+- No hashtags
 - Output only the caption`;
 
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], 300);

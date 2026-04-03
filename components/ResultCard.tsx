@@ -305,6 +305,17 @@ function parseScriptItems(content: string): ScriptLine[] {
   let i = 0;
   let pendingTs: string | undefined;
 
+  const SECTION_LABELS = "HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT";
+
+  // Helper: strip markdown from content (not section headers)
+  const stripContent = (t: string) =>
+    t.replace(/\*\*(.+?)\*\*/g, "$1")
+     .replace(/\*(.+?)\*/g, "$1")
+     .replace(/__(.+?)__/g, "$1")
+     .replace(/_(.+?)_/g, "$1")
+     .replace(/^[\#\-\*\>]+(\s)/g, "$1")
+     .trim();
+
   while (i < rawLines.length) {
     const line = rawLines[i].trim();
     i++;
@@ -314,29 +325,29 @@ function parseScriptItems(content: string): ScriptLine[] {
     const tsMatch = line.match(/^\[(\d+:\d+)\]$/);
     if (tsMatch) { pendingTs = tsMatch[1]; continue; }
 
-    // [SCENE: description]
+    // [SCENE: description] — strip markdown inside
     if (/^\[.+\]$/.test(line)) {
-      const clean = line.slice(1, -1).trim();
-      if (/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*$/i.test(clean)) continue;
+      const clean = stripContent(line.slice(1, -1).trim());
+      if (new RegExp(`^(${SECTION_LABELS})\\s*$`, "i").test(clean)) continue;
       items.push({ kind: "scene", text: clean });
       continue;
     }
 
-    // Section label only: "HOOK:" or "HOOK"
-    const labelOnly = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]?\s*$/i);
-    if (labelOnly) {
-      const key = labelOnly[1].toUpperCase();
+    // **HOOK** or **HOOK:** — markdown bold section header (label only)
+    let m = line.match(new RegExp(`^\\*\\*(${SECTION_LABELS})\\*\\*\\s*[:.\\-]?\\s*$`, "i"));
+    if (m) {
+      const key = m[1].toUpperCase();
       const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
       items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
       pendingTs = undefined;
       continue;
     }
 
-    // Section + content on same line: "HOOK: your text here"
-    const labelContent = line.match(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*(.+)/i);
-    if (labelContent) {
-      const key = labelContent[1].toUpperCase();
-      const text = labelContent[2].trim();
+    // **HOOK:** your script text here — bold section + content
+    m = line.match(new RegExp(`^\\*\\*(${SECTION_LABELS})\\*\\*\\s*[:.\\-]\\s*(.+)`, "i"));
+    if (m) {
+      const key = m[1].toUpperCase();
+      const text = stripContent(m[2]);
       const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
       if (text) {
         items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
@@ -346,9 +357,33 @@ function parseScriptItems(content: string): ScriptLine[] {
       continue;
     }
 
-    // Regular content — strip any leftover prefix
+    // HOOK: or HOOK — plain section header (label only)
+    m = line.match(new RegExp(`^(${SECTION_LABELS})\\s*[:.\\-]?\\s*$`, "i"));
+    if (m) {
+      const key = m[1].toUpperCase();
+      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
+      pendingTs = undefined;
+      continue;
+    }
+
+    // HOOK: your script text here — plain section + content
+    m = line.match(new RegExp(`^(${SECTION_LABELS})\\s*[:.\\-]\\s*(.+)`, "i"));
+    if (m) {
+      const key = m[1].toUpperCase();
+      const text = stripContent(m[2]);
+      const meta = SECTION_META[key] || { accent: "#8B5CF6", label: key };
+      if (text) {
+        items.push({ kind: "section", label: meta.label, accent: meta.accent, timestamp: pendingTs });
+        items.push({ kind: "spoken", text, timestamp: pendingTs });
+      }
+      pendingTs = undefined;
+      continue;
+    }
+
+    // Regular content — strip any leftover prefix + markdown
     const origLine = rawLines[i - 1].trim();
-    const stripped = origLine.replace(/^(HOOK|BODY|CTA|INTRO|OUTRO|SCRIPT)\s*[:.\-]\s*/i, "").trim();
+    const stripped = stripContent(origLine.replace(new RegExp(`^(${SECTION_LABELS})\\s*[:.\\-]\\s*`, "i"), "")).trim();
     if (!stripped || stripped.length < 2) { pendingTs = undefined; continue; }
 
     items.push({ kind: "spoken", text: stripped, timestamp: pendingTs });

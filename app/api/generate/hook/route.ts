@@ -30,8 +30,9 @@ Rules:
 - Each hook is 1-3 punchy lines
 - Vary the style: question, bold claim, stat, pattern interrupt
 - Number each hook 1-3
-- No hashtags, no markdown
-- No preamble, output only the hooks
+- Plain text only — NO markdown (no **bold**, no *italic*, no headings)
+- No hashtags, no preamble
+- Output only the hooks
 
 Format:
 1. [hook]
