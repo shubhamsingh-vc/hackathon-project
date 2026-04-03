@@ -238,23 +238,31 @@ function HashtagsOutput({ content }: { content: string[] }) {
 // ─── Hooks Output ───
 function HooksOutput({ content }: { content: string[] }) {
   const hookMeta = [
-    { label: "Story Hook", icon: "📖", accent: "#A855F7", glow: "rgba(168,85,247,0.25)", bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.15)" },
+    { label: "Opening Hook", icon: "🎯", accent: "#A855F7", glow: "rgba(168,85,247,0.25)", bg: "rgba(168,85,247,0.06)", border: "rgba(168,85,247,0.15)" },
     { label: "Stat Hook", icon: "📊", accent: "#F59E0B", glow: "rgba(245,158,11,0.25)", bg: "rgba(245,158,11,0.05)", border: "rgba(245,158,11,0.15)" },
-    { label: "Question Hook", icon: "❓", accent: "#10B981", glow: "rgba(16,185,129,0.25)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
-    { label: "Bold Hook", icon: "🔥", accent: "#EF4444", glow: "rgba(239,68,68,0.25)", bg: "rgba(239,68,68,0.05)", border: "rgba(239,68,68,0.15)" },
+    { label: "Pattern Hook", icon: "⚡", accent: "#10B981", glow: "rgba(16,185,129,0.25)", bg: "rgba(16,185,129,0.05)", border: "rgba(16,185,129,0.15)" },
   ];
+
+  const detectHookType = (hook: string) => {
+    // Stat/number hook
+    if (/\d+%|\d+K|\$\d|\d+\s*(people|users|followers|views|million|billion|hours|days)/i.test(hook)) return 1;
+    // Pattern interrupt / contrast
+    if (/but|however|except|unlike|difference between|most people|everyone thinks/i.test(hook)) return 2;
+    return 0; // Opening hook (question, bold statement)
+  };
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3 pb-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.08)" }}>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-[#A855F7]">Viral Hooks</div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-[#A855F7]">Opening Hooks</div>
         <div className="flex-1 h-px" style={{ background: "rgba(168,85,247,0.08)" }} />
-        <span className="text-[10px] text-[#6B7280]">{content.length} options</span>
+        <span className="text-[10px] text-[#6B7280]">{content.length} options · ranked best to least</span>
       </div>
 
       {content.map((hook, i) => {
-        const meta = hookMeta[i % hookMeta.length];
+        const hookTypeIdx = detectHookType(hook);
+        const meta = hookMeta[hookTypeIdx];
 
         return (
           <div
@@ -277,54 +285,50 @@ function HooksOutput({ content }: { content: string[] }) {
               el.style.transform = "translateY(0)";
             }}
           >
-            {/* Ambient glow at bottom-left */}
+            {/* Ambient glow */}
             <div
               className="absolute bottom-0 left-0 w-32 h-32 rounded-full pointer-events-none"
-              style={{
-                background: `radial-gradient(circle, ${meta.glow} 0%, transparent 70%)`,
-                opacity: 0.5,
-              }}
+              style={{ background: `radial-gradient(circle, ${meta.glow} 0%, transparent 70%)`, opacity: 0.5 }}
             />
 
             {/* Header row */}
             <div className="flex items-center justify-between mb-4 relative z-10">
               <div className="flex items-center gap-2.5">
+                {/* Big rank number */}
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px]"
+                  className="w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold"
                   style={{
                     background: `linear-gradient(135deg, ${meta.accent}25, ${meta.accent}10)`,
-                    color: meta.accent,
                     border: `1px solid ${meta.accent}30`,
                     boxShadow: `0 0 15px ${meta.accent}20`,
+                    color: meta.accent,
                   }}
                 >
-                  {meta.icon}
+                  <span className="text-[16px] leading-none">{i + 1}</span>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</div>
-                  <div className="text-[10px] text-[#6B7280] font-mono">#{i + 1}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px]" style={{ filter: `drop-shadow(0 0 4px ${meta.accent})` }}>{meta.icon}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: meta.accent }}>{meta.label}</span>
                 </div>
               </div>
               <CopyBtn text={hook} />
             </div>
 
-            {/* Hook text — large, glowing */}
+            {/* Hook text */}
             <p
-              className="text-[16px] leading-relaxed font-semibold relative z-10 pr-6"
+              className="text-[15px] leading-relaxed font-medium relative z-10 pr-2"
               style={{
-                color: meta.accent,
-                textShadow: `0 0 40px ${meta.glow}, 0 0 2px ${meta.accent}50`,
+                color: "#E5E7EB",
+                textShadow: `0 0 30px ${meta.glow}`,
               }}
             >
               {hook}
             </p>
 
-            {/* Hover reveal: gradient overlay at bottom */}
+            {/* Bottom glow line */}
             <div
-              className="absolute inset-x-0 bottom-0 h-8 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                background: `linear-gradient(to top, ${meta.bg}, transparent)`,
-              }}
+              className="absolute bottom-0 left-0 right-0 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ background: `linear-gradient(90deg, transparent, ${meta.accent}60, transparent)` }}
             />
           </div>
         );
@@ -337,12 +341,16 @@ function HooksOutput({ content }: { content: string[] }) {
 function CaptionOutput({ content }: { content: string }) {
   const lines = content.split("\n").filter((l) => l.trim() !== "");
   const totalChars = content.length;
-  const isLongForm = totalChars > 200;
+
+  // Detect caption structure
+  const isEmoji = (line: string) => /^[\p{Emoji}\s]+$/u.test(line.trim()) && line.trim().length <= 15;
+  const isCTA = (line: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out|link\b)/i.test(line);
+  const isQuestion = (line: string) => /^(did you|what if|have you ever|why do|i tried|here'?s|stop|can you)/i.test(line.trim()) || line.trim().endsWith("?");
 
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="flex items-center gap-4 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
+      <div className="flex items-center gap-4 pb-4 mb-4" style={{ borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center text-[14px]"
@@ -357,106 +365,62 @@ function CaptionOutput({ content }: { content: string }) {
           </div>
           <div>
             <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#6366F1" }}>Caption</div>
-            <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
+            <div className="text-[11px] text-[#6B7280]">{totalChars} chars</div>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {isLongForm && (
-            <span
-              className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-              style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
-            >
-              Long Form
-            </span>
-          )}
           <CopyBtn text={content} label="Copy" />
         </div>
       </div>
 
-      {/* Caption lines */}
-      <div className="space-y-4">
+      {/* Caption sections */}
+      <div className="space-y-3">
         {lines.map((line, i) => {
           const trimmed = line.trim();
-          const isEmoji = /^[\p{Emoji}\s]+$/u.test(trimmed) && trimmed.length <= 12;
-          const isEllipsis = trimmed === "..." || trimmed === "…";
-          const isCTA = /\b(link in bio|follow|comment|share|save this|link|bio|dm me|tag a friend|follow for more|subscribe)\b/i.test(trimmed);
-          const isHashtag = /(^|\s)#\w/.test(line);
-          const isMention = /@[\w]+/.test(trimmed);
-          const isBold = /^\*\*.+\*\*$/.test(trimmed);
-          const isFirst = i === 0;
 
-          if (isEmoji) {
+          // Line 1: Emoji opener
+          if (i === 0 && isEmoji(line)) {
             return (
-              <p key={i} className="text-4xl leading-none" style={{ filter: "drop-shadow(0 0 12px rgba(168,85,247,0.4))" }}>
+              <p key={i} className="text-4xl leading-none" style={{ filter: "drop-shadow(0 0 12px rgba(168,85,247,0.5))" }}>
                 {trimmed}
               </p>
             );
           }
 
-          if (isEllipsis) {
+          // CTA — highlighted green
+          if (isCTA(trimmed)) {
             return (
-              <div key={i} className="flex items-center justify-center gap-1 py-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/40" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/30" />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]/20" />
+              <div key={i} className="rounded-xl px-4 py-3" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>→</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
+                </div>
+                <p className="text-[14px] leading-relaxed font-medium" style={{ color: "#10B981", textShadow: "0 0 20px rgba(16,185,129,0.25)" }}>
+                  {line}
+                </p>
               </div>
             );
           }
 
-          if (isCTA) {
+          // Line 1 (or first non-emoji): Hook/attention-grabber
+          if (i === 0 || (i === 1 && isEmoji(lines[0] ?? ""))) {
+            const isQ = isQuestion(trimmed);
             return (
-              <p
-                key={i}
-                className="text-[14px] leading-relaxed font-semibold"
-                style={{ color: "#10B981", textShadow: "0 0 25px rgba(16,185,129,0.3)", padding: "6px 0" }}
-              >
-                {line}
-              </p>
+              <div key={i} className="rounded-xl px-4 py-3" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold" style={{ background: "rgba(168,85,247,0.15)", color: "#A855F7" }}>{isQ ? "?" : "!"}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>{isQ ? "Question Hook" : "Hook"}</span>
+                </div>
+                <p className="text-[15px] leading-relaxed font-medium" style={{ color: "#E5E7EB", textShadow: "0 0 20px rgba(168,85,247,0.2)" }}>
+                  {line}
+                </p>
+              </div>
             );
           }
 
-          if (isBold) {
-            return (
-              <p key={i} className="text-[15px] leading-relaxed font-bold" style={{ color: "#FAFAFA" }}>
-                {trimmed.replace(/\*\*/g, "")}
-              </p>
-            );
-          }
-
-          if (isHashtag) {
-            const parts = line.split(/(\s+#\w+\S*)/g);
-            return (
-              <p key={i} className="text-[13px] leading-relaxed">
-                {parts.map((part, pi) =>
-                  part.match(/^\s*#/) ? (
-                    <span key={pi} className="font-semibold" style={{ color: "#A855F7" }}>{part}</span>
-                  ) : (
-                    <span key={pi} style={{ color: "rgba(168,85,247,0.5)" }}>{part}</span>
-                  )
-                )}
-              </p>
-            );
-          }
-
-          if (isMention) {
-            return (
-              <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#818CF8" }}>
-                {line}
-              </p>
-            );
-          }
-
-          // First line = lead, gets special treatment
-          if (isFirst) {
-            return (
-              <p key={i} className="text-[16px] leading-relaxed font-medium" style={{ color: "#F3F4F6" }}>
-                {line}
-              </p>
-            );
-          }
-
+          // Body — flowing readable text
           return (
-            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#D1D5DB" }}>
+            <p key={i} className="text-[14px] leading-relaxed" style={{ color: "#D1D5DB", paddingLeft: "2px" }}>
               {line}
             </p>
           );
