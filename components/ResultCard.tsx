@@ -61,10 +61,12 @@ function TopBar({ color }: { color: string }) {
 }
 
 // ─── Content highlight palette ───
-const HOOK_COLOR   = "#C084FC"; // Purple — hook lines
-const BODY_COLOR   = "#475569"; // Dark slate — body text
-const CTA_COLOR    = "#60A5FA"; // Blue — CTA lines
-const SCRIPT_COLOR = "#475569"; // Dark slate — script body
+// Hook=purple, Caption=green, Hashtags=orange, Script=blue, Body=dark
+const HOOK_COLOR   = "#C084FC"; // Purple — hook output
+const CAPTION_COLOR = "#34D399"; // Green — caption output
+const HASHTAG_COLOR = "#FB923C"; // Orange — hashtags output
+const SCRIPT_COLOR  = "#60A5FA"; // Blue — script output
+const BODY_COLOR    = "#475569"; // Dark slate — body text
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -77,23 +79,23 @@ function HashtagsOutput({ content }: { content: string[] }) {
   };
 
   const catStyle: Record<string, { accent: string; label: string }> = {
-    trending: { accent: "#F87171", label: "Trending" },
-    regular: { accent: "#A855F7", label: "Popular" },
-    niche: { accent: "#34D399", label: "Niche" },
+    trending: { accent: "#FB923C", label: "Trending" },
+    regular: { accent: "#FBBF24", label: "Popular" },
+    niche: { accent: "#FDBA74", label: "Niche" },
   };
 
   return (
     <div>
-      <TopBar color="#A855F7" />
+      <TopBar color="#FB923C" />
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           {/* HASHTAGS label */}
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md"
-            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}
+            style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.25)" }}
           >
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#A855F7" }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hashtags</span>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#FB923C" }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#FB923C" }}>Hashtags</span>
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">#{content.length}</span>
         </div>
@@ -227,15 +229,15 @@ function CaptionOutput({ content }: { content: string }) {
 
   const sectionAccents = {
     hook: "#C084FC",
-    body: "#475569",
-    cta: "#60A5FA",
+    body: "#34D399",
+    cta: "#34D399",
   };
 
-  // Text colors — hook=purple, body=black/dark, cta=blue
+  // Text colors — green theme for caption
   const sectionTextColors = {
     hook: "#C084FC",
-    body: "#475569",
-    cta: "#60A5FA",
+    body: "#34D399",
+    cta: "#34D399",
   };
 
   const sectionLabels = {
@@ -255,10 +257,10 @@ function CaptionOutput({ content }: { content: string }) {
 
   return (
     <div>
-      <TopBar color="#C084FC" />
+      <TopBar color="#34D399" />
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#6366F1]">Caption</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#34D399]">Caption</span>
           <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
         </div>
         <CopyBtn text={content} label="Copy" />
@@ -321,12 +323,12 @@ type ScriptLine =
   | { kind: "scene"; text: string };
 
 const SECTION_META: Record<string, { accent: string; label: string; secPerLine: number }> = {
-  HOOK:  { accent: "#C084FC", label: "Hook",          secPerLine: 3 },
+  HOOK:  { accent: "#C084FC", label: "Hook",           secPerLine: 3 },
   CTA:   { accent: "#60A5FA", label: "Call to Action", secPerLine: 2 },
-  INTRO: { accent: "#C084FC", label: "Intro",         secPerLine: 4 },
-  OUTRO: { accent: "#60A5FA", label: "Outro",         secPerLine: 3 },
-  BODY:  { accent: "#475569", label: "Script",         secPerLine: 5 },
-  SCRIPT:{ accent: "#475569", label: "Script",         secPerLine: 5 },
+  INTRO: { accent: "#C084FC", label: "Intro",          secPerLine: 4 },
+  OUTRO: { accent: "#60A5FA", label: "Outro",          secPerLine: 3 },
+  BODY:  { accent: "#60A5FA", label: "Body",            secPerLine: 5 },
+  SCRIPT:{ accent: "#60A5FA", label: "Body",            secPerLine: 5 },
 };
 
 function parseScriptItems(content: string): ScriptLine[] {
@@ -459,9 +461,9 @@ function ScriptOutput({ content }: { content: string }) {
     let secs = 0;
     return (
       <div>
-        <TopBar color="#818CF8" />
+        <TopBar color="#60A5FA" />
         <div className="flex items-center justify-between mb-5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#818CF8]">Script · {totalChars} chars</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#60A5FA]">Script · {totalChars} chars</span>
           <CopyBtn text={content} label="Copy" />
         </div>
         <div className="space-y-2">
@@ -479,7 +481,7 @@ function ScriptOutput({ content }: { content: string }) {
                   setTimeout(() => setCopiedLine(null), 1500);
                 }}
               >
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8" }}>
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0" style={{ background: "rgba(96,165,250,0.1)", color: "#60A5FA" }}>
                   {ts}
                 </span>
                 <span className={`text-[14px] leading-relaxed flex-1 transition-colors ${isCopied ? "text-[#60A5FA] font-medium" : "text-[#475569] group-hover:text-white"}`}>
@@ -533,9 +535,9 @@ function ScriptOutput({ content }: { content: string }) {
 
   return (
     <div>
-      <TopBar color="#818CF8" />
+      <TopBar color="#60A5FA" />
       <div className="flex items-center justify-between mb-5">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#818CF8]">Script · {totalChars} chars</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#60A5FA]">Script · {totalChars} chars</span>
         <CopyBtn text={content} label="Copy Script" />
       </div>
 
@@ -671,9 +673,9 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
   hook: { label: "Hook", color: "#C084FC" },
-  caption: { label: "Caption", color: "#C084FC" },
-  hashtags: { label: "Hashtags", color: "#A855F7" },
-  script: { label: "Script", color: "#818CF8" },
+  caption: { label: "Caption", color: "#34D399" },
+  hashtags: { label: "Hashtags", color: "#FB923C" },
+  script: { label: "Script", color: "#60A5FA" },
 };
 
 // Need React import for useRef
