@@ -543,10 +543,12 @@ function ScriptOutput({ content }: { content: string }) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(139,92,246,0.15)", color: "#A78BFA" }}>✍</div>
-          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "#8B5CF6" }}>Script</span>
-          <span className="text-[11px] text-[#6B7280]">{totalChars} chars</span>
-          <CopyBtn text={content} label="Copy" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))", color: "#A78BFA", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 0 20px rgba(139,92,246,0.15)" }}>✍</div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Script</div>
+            <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
+          </div>
+          <div className="ml-auto"><CopyBtn text={content} label="Copy Script" /></div>
         </div>
         {rawLines.map((line, i) => (
           <p key={i} className="text-[15px] text-[#E5E7EB] leading-relaxed">{line.trim()}</p>
@@ -555,200 +557,160 @@ function ScriptOutput({ content }: { content: string }) {
     );
   }
 
-  const dividerMeta: Record<string, { accent: string; bg: string; glow: string; icon: string }> = {
-    Hook: { accent: "#A855F7", bg: "rgba(168,85,247,0.08)", glow: "rgba(168,85,247,0.2)", icon: "⚡" },
-    "Call to Action": { accent: "#10B981", bg: "rgba(16,185,129,0.08)", glow: "rgba(16,185,129,0.2)", icon: "→" },
-    INTRO: { accent: "#6366F1", bg: "rgba(99,102,241,0.06)", glow: "rgba(99,102,241,0.15)", icon: "▶" },
-    OUTRO: { accent: "#F59E0B", bg: "rgba(245,158,11,0.06)", glow: "rgba(245,158,11,0.15)", icon: "■" },
-    Body: { accent: "#8B5CF6", bg: "rgba(139,92,246,0.04)", glow: "rgba(139,92,246,0.1)", icon: "◆" },
+  // Group items into sections: each section has a label + body of items
+  type Section = { label: string; accent: string; bg: string; glow: string; icon: string; items: ScriptItem[] };
+  const sections: Section[] = [];
+  let current: Section | null = null;
+
+  const metaFor = (label: string) => {
+    const map: Record<string, { accent: string; bg: string; glow: string; icon: string }> = {
+      Hook: { accent: "#A855F7", bg: "rgba(168,85,247,0.1)", glow: "rgba(168,85,247,0.2)", icon: "⚡" },
+      "Call to Action": { accent: "#10B981", bg: "rgba(16,185,129,0.1)", glow: "rgba(16,185,129,0.2)", icon: "→" },
+      INTRO: { accent: "#6366F1", bg: "rgba(99,102,241,0.07)", glow: "rgba(99,102,241,0.15)", icon: "▶" },
+      OUTRO: { accent: "#F59E0B", bg: "rgba(245,158,11,0.07)", glow: "rgba(245,158,11,0.15)", icon: "■" },
+    };
+    return map[label] || { accent: "#8B5CF6", bg: "rgba(139,92,246,0.04)", glow: "rgba(139,92,246,0.1)", icon: "◆" };
   };
 
+  for (const item of items) {
+    if (item.kind === "divider") {
+      if (current) sections.push(current);
+      const meta = metaFor(item.label);
+      current = { label: item.label, accent: meta.accent, bg: meta.bg, glow: meta.glow, icon: meta.icon, items: [] };
+    } else if (current) {
+      current.items.push(item);
+    } else {
+      // Items before any divider — create a default "Script" section
+      const meta = metaFor("Body");
+      current = { label: "Script", accent: meta.accent, bg: meta.bg, glow: meta.glow, icon: meta.icon, items: [item] };
+    }
+  }
+  if (current) sections.push(current);
+
   return (
-    <div className="space-y-1">
+    <div>
       {/* Header */}
-      <div className="flex items-center gap-4 pb-4 mb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold"
-          style={{
-            background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))",
-            color: "#A78BFA",
-            border: "1px solid rgba(139,92,246,0.2)",
-            boxShadow: "0 0 20px rgba(139,92,246,0.15)",
-          }}
-        >
-          ✍
-        </div>
+      <div className="flex items-center gap-4 pb-4 mb-5" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06))", color: "#A78BFA", border: "1px solid rgba(139,92,246,0.2)", boxShadow: "0 0 20px rgba(139,92,246,0.15)" }}>✍</div>
         <div>
           <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#8B5CF6" }}>Script</div>
-          <div className="text-[11px] text-[#6B7280]">{totalChars} characters</div>
+          <div className="text-[11px] text-[#6B7280]">{totalChars} characters · {sections.length} sections</div>
         </div>
-        <div className="ml-auto">
-          <CopyBtn text={content} label="Copy Script" />
-        </div>
+        <div className="ml-auto"><CopyBtn text={content} label="Copy Script" /></div>
       </div>
 
-      {/* Script items */}
-      <div className="space-y-2">
-        {items.map((item, i) => {
-          // ── Section divider ──
-          if (item.kind === "divider") {
-            const meta = dividerMeta[item.label] || dividerMeta["Body"];
-            return (
-              <div key={i} className="flex items-center gap-3 pt-4 pb-1">
-                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${meta.accent}30)` }} />
-                <div
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest"
-                  style={{
-                    color: meta.accent,
-                    background: meta.bg,
-                    border: `1px solid ${meta.accent}30`,
-                    boxShadow: `0 0 20px ${meta.glow}, inset 0 1px 0 ${meta.accent}15`,
-                  }}
-                >
-                  <span className="text-[13px]">{meta.icon}</span>
-                  {item.label}
-                </div>
-                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${meta.accent}30, transparent)` }} />
-              </div>
-            );
-          }
-
-          // ── Timestamp badge ──
-          if (item.kind === "timestamp") {
-            return (
-              <div key={i} className="flex items-center gap-3 mt-1">
-                <span
-                  className="px-3 py-1.5 rounded-xl text-[11px] font-bold font-mono flex-shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.06))",
-                    color: "#818CF8",
-                    border: "1px solid rgba(99,102,241,0.25)",
-                    boxShadow: "0 0 15px rgba(99,102,241,0.15)",
-                  }}
-                >
-                  {item.text}
-                </span>
-                <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.3), transparent)" }} />
-              </div>
-            );
-          }
-
-          // ── Scene cue ──
-          if (item.kind === "scene") {
-            return (
-              <div
-                key={i}
-                className="flex items-center gap-3 py-2.5 px-4 rounded-xl my-1"
+      {/* Sections */}
+      <div className="space-y-5">
+        {sections.map((section, si) => (
+          <div key={si} className="space-y-3">
+            {/* Section header badge */}
+            <div className="flex items-center gap-3">
+              <span
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest"
                 style={{
-                  background: "rgba(168,85,247,0.05)",
-                  border: "1px solid rgba(168,85,247,0.12)",
+                  color: section.accent,
+                  background: section.bg,
+                  border: `1px solid ${section.accent}30`,
+                  boxShadow: `0 0 20px ${section.glow}, inset 0 1px 0 ${section.accent}15`,
                 }}
               >
-                <span className="text-[12px] flex-shrink-0" style={{ filter: "drop-shadow(0 0 4px rgba(168,85,247,0.5))" }}>🎬</span>
-                <span className="text-[12px] italic leading-relaxed" style={{ color: "rgba(168,85,247,0.6)" }}>{item.text}</span>
-              </div>
-            );
-          }
-
-          // ── Hook card ──
-          if (item.kind === "hook") {
-            return (
-              <div
-                key={i}
-                className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.04))",
-                  border: "1px solid rgba(168,85,247,0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = "rgba(168,85,247,0.45)";
-                  el.style.boxShadow = "0 0 40px rgba(168,85,247,0.25), inset 0 1px 0 rgba(168,85,247,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = "rgba(168,85,247,0.2)";
-                  el.style.boxShadow = "none";
-                }}
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(168,85,247,0.15) 0%, transparent 60%)" }} />
-                <div className="flex items-center gap-2 mb-3 relative z-10">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(168,85,247,0.2)", color: "#A855F7", boxShadow: "0 0 12px rgba(168,85,247,0.3)" }}>⚡</div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#A855F7" }}>Hook</span>
-                </div>
-                <div className="flex items-start gap-3 relative z-10">
-                  <span className="text-[15px] text-[#FAFAFA] font-semibold leading-relaxed flex-1" style={{ textShadow: "0 0 30px rgba(168,85,247,0.2)" }}>{item.text}</span>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
-                    <CopyBtn text={item.text} />
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          // ── CTA card ──
-          if (item.kind === "cta") {
-            return (
-              <div
-                key={i}
-                className="group relative rounded-2xl p-5 transition-all duration-500 overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04))",
-                  border: "1px solid rgba(16,185,129,0.18)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = "rgba(16,185,129,0.4)";
-                  el.style.boxShadow = "0 0 40px rgba(16,185,129,0.2), inset 0 1px 0 rgba(16,185,129,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = "rgba(16,185,129,0.18)";
-                  el.style.boxShadow = "none";
-                }}
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(16,185,129,0.12) 0%, transparent 60%)" }} />
-                <div className="flex items-center gap-2 mb-3 relative z-10">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981", boxShadow: "0 0 12px rgba(16,185,129,0.2)" }}>→</div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>Call to Action</span>
-                </div>
-                <div className="flex items-start gap-3 relative z-10">
-                  <span className="text-[15px] font-semibold leading-relaxed flex-1" style={{ color: "#10B981", textShadow: "0 0 25px rgba(16,185,129,0.3)" }}>{item.text}</span>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0 mt-0.5">
-                    <CopyBtn text={item.text} />
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          // ── Body line ──
-          return (
-            <div
-              key={i}
-              className="group flex items-start gap-4 py-2.5 px-4 rounded-xl transition-all duration-300"
-              style={{}}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = "rgba(139,92,246,0.04)";
-                el.style.borderRadius = "10px";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = "transparent";
-              }}
-            >
-              <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
-                <span className="w-2 h-2 rounded-full" style={{ background: "rgba(139,92,246,0.4)" }} />
-                <span className="w-px h-3 mt-1" style={{ background: "rgba(139,92,246,0.15)" }} />
-              </div>
-              <span className="text-[15px] text-[#D1D5DB] leading-relaxed flex-1 pt-0.5">{item.text}</span>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
-                <CopyBtn text={item.text} />
-              </div>
+                <span className="text-[13px]">{section.icon}</span>
+                {section.label}
+              </span>
+              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${section.accent}20, transparent)` }} />
             </div>
-          );
-        })}
+
+            {/* Section body — flowing paragraphs, NO bullets */}
+            <div className="space-y-2 pl-1">
+              {section.items.map((item, li) => {
+                // Timestamp — inline badge
+                if (item.kind === "timestamp") {
+                  return (
+                    <div key={li} className="flex items-center gap-2 mt-1">
+                      <span
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono"
+                        style={{ background: "rgba(99,102,241,0.1)", color: "#818CF8", border: "1px solid rgba(99,102,241,0.2)" }}
+                      >
+                        {item.text}
+                      </span>
+                      <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.2), transparent)" }} />
+                    </div>
+                  );
+                }
+
+                // Scene cue — styled italic inline
+                if (item.kind === "scene") {
+                  return (
+                    <p key={li} className="text-[13px] italic pl-3 py-1" style={{ color: "rgba(168,85,247,0.55)", borderLeft: `2px solid rgba(168,85,247,0.25)` }}>
+                      🎬 {item.text}
+                    </p>
+                  );
+                }
+
+                // Body — pure paragraph, no bullet, no dot, just readable text
+                if (item.kind === "body") {
+                  return (
+                    <div key={li} className="group flex items-start gap-3">
+                      <span className="mt-2 flex-shrink-0 w-2 h-2 rounded-sm opacity-50" style={{ background: section.accent }} />
+                      <p className="text-[15px] leading-relaxed flex-1" style={{ color: "#D1D5DB" }}>
+                        {item.text}
+                      </p>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+                        <CopyBtn text={item.text} />
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Hook / CTA card — standalone glowing card
+                if (item.kind === "hook" || item.kind === "cta") {
+                  const accent = item.kind === "hook" ? "#A855F7" : "#10B981";
+                  const label = item.kind === "hook" ? "Hook" : "Call to Action";
+                  const icon = item.kind === "hook" ? "⚡" : "→";
+                  return (
+                    <div
+                      key={li}
+                      className="group relative rounded-2xl p-5 overflow-hidden"
+                      style={{
+                        background: `linear-gradient(135deg, ${accent}12, ${accent}05)`,
+                        border: `1px solid ${accent}25`,
+                      }}
+                      onMouseEnter={(e) => {
+                        const el = e.currentTarget as HTMLDivElement;
+                        el.style.borderColor = `${accent}50`;
+                        el.style.boxShadow = `0 0 40px ${accent}20, inset 0 1px 0 ${accent}20`;
+                      }}
+                      onMouseLeave={(e) => {
+                        const el = e.currentTarget as HTMLDivElement;
+                        el.style.borderColor = `${accent}25`;
+                        el.style.boxShadow = "none";
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none" style={{ background: `radial-gradient(circle at 100% 0%, ${accent}12 0%, transparent 60%)` }} />
+                      <div className="flex items-center gap-2 mb-2 relative z-10">
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold" style={{ background: `${accent}20`, color: accent }}>{icon}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: accent }}>{label}</span>
+                      </div>
+                      <div className="flex items-start gap-3 relative z-10">
+                        <span
+                          className="text-[15px] font-semibold leading-relaxed flex-1"
+                          style={{ color: accent, textShadow: `0 0 30px ${accent}30` }}
+                        >
+                          {item.text}
+                        </span>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+                          <CopyBtn text={item.text} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
