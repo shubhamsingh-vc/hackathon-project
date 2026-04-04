@@ -316,67 +316,110 @@ export default function Home() {
       </section>
 
       {/* ===== PLATFORM USE CASES ===== */}
-      <section className="py-24 px-6 border-t border-white/[0.05]">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-24 px-6 border-t border-white/[0.05] relative overflow-hidden">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,58,237,0.06) 0%, transparent 70%)" }} />
+
+        <div className="max-w-5xl mx-auto relative z-10">
           <ScrollReveal>
-            <div className="text-center mb-20">
+            <div className="text-center mb-16">
               <span className="eyebrow mb-6 inline-flex">
-                <span style={{ color: "#6366F1" }}>◈</span>
+                <span style={{ color: "#7C3AED" }}>◆</span>
                 Platform-Specific
               </span>
-              <h2 className="text-[36px] md:text-[52px] font-extrabold tracking-tight text-[#FAFAFA] mb-5">
-                Built for every platform
+              <h2 className="text-[36px] md:text-[52px] font-extrabold tracking-tight text-[#FAFAFA] mb-4">
+                Built for <span className="glow-text">every platform</span>
               </h2>
-              <p className="text-[16px] text-[#6B7280] max-w-lg mx-auto">
+              <p className="text-[15px] text-[#6B7280] max-w-lg mx-auto">
                 Each platform has its own algorithm, audience behavior, and content style. We optimize for all of them.
               </p>
             </div>
           </ScrollReveal>
 
-          <div className="space-y-5">
-            {/* Platform Comparison Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {PLATFORM_USE_CASES.map((item, i) => (
-                <ScrollReveal key={item.platform} delay={i * 100}>
-                  <div
-                    className="rounded-2xl overflow-hidden h-full flex flex-col"
-                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${item.color}20` }}
-                  >
-                    {/* Platform header */}
-                    <div className="p-6" style={{ borderBottom: `1px solid ${item.color}15` }}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold"
-                          style={{ background: `${item.color}18`, border: `1px solid ${item.color}30` }}
-                        >
-                          {item.emoji}
-                        </div>
-                        <div>
-                          <div className="text-[16px] font-bold text-[#FAFAFA]">{item.platform}</div>
-                          <div className="h-0.5 w-8 mt-1.5 rounded-full" style={{ background: item.color }} />
-                        </div>
+          {/* Platform Comparison Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {PLATFORM_USE_CASES.map((item, i) => (
+              <ScrollReveal key={item.platform} delay={i * 100}>
+                <div
+                  className={`platform-card rounded-2xl overflow-hidden h-full flex flex-col relative cursor-pointer`}
+                  style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${item.color}25` }}
+                  data-accent={item.color}
+                >
+                  {/* Top accent gradient bar */}
+                  <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${item.color}, transparent)` }} />
+
+                  {/* Platform header */}
+                  <div className="p-6 pb-5">
+                    {/* Gradient glow behind icon */}
+                    <div className="relative mb-4">
+                      <div
+                        className="absolute inset-0 rounded-2xl blur-xl opacity-30 platform-icon-glow"
+                        style={{ background: item.color }}
+                      />
+                      <div
+                        className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold"
+                        style={{ background: `${item.color}20`, border: `2px solid ${item.color}40`, boxShadow: `0 0 20px ${item.color}30` }}
+                      >
+                        {item.emoji}
                       </div>
-                      <p className="text-[12px] text-[#6B7280] leading-relaxed">{item.tip}</p>
                     </div>
 
-                    {/* Benefits list */}
-                    <div className="p-6 flex-1 space-y-3">
-                      {item.benefits.map((benefit) => (
-                        <div key={benefit} className="flex items-start gap-3">
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${item.color}15` }}>
-                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="2 6 5 9 10 3"/>
-                            </svg>
-                          </div>
-                          <span className="text-[13px] text-[#D1D5DB] leading-relaxed">{benefit}</span>
-                        </div>
-                      ))}
+                    {/* Platform name */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="platform-name text-[18px] font-bold text-[#FAFAFA]">{item.platform}</h3>
+                      <div className="flex-1 h-px rounded-full" style={{ background: `linear-gradient(90deg, ${item.color}60, transparent)` }} />
                     </div>
+
+                    {/* Tip */}
+                    <p className="text-[12px] text-[#6B7280] leading-relaxed">{item.tip}</p>
                   </div>
-                </ScrollReveal>
-              ))}
-            </div>
+
+                  {/* Benefits list */}
+                  <div className="px-6 pb-6 flex-1 space-y-2.5">
+                    {item.benefits.map((benefit) => (
+                      <div key={benefit} className="platform-benefit flex items-start gap-3 py-2 px-3 rounded-xl transition-all duration-300">
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: `${item.color}18`, border: `1px solid ${item.color}30` }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                        <span className="text-[13px] text-[#CBD5E1] leading-relaxed transition-colors duration-300">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom gradient */}
+                  <div className="h-px w-3/4 mx-auto mb-2" style={{ background: `linear-gradient(90deg, transparent, ${item.color}40, transparent)` }} />
+                </div>
+              </ScrollReveal>
+            ))}
           </div>
+
+          <style>{`
+            .platform-card {
+              transition: transform 0.4s ease, box-shadow 0.4s ease;
+            }
+            .platform-card:hover {
+              transform: translateY(-8px);
+              box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 40px rgba(124,58,237,0.1);
+              border-color: rgba(124,58,237,0.5) !important;
+            }
+            .platform-card:hover .platform-icon-glow {
+              opacity: 0.6 !important;
+            }
+            .platform-card:hover .platform-benefit {
+              background: rgba(255,255,255,0.03);
+            }
+            .platform-card:hover .platform-benefit span {
+              color: #F3F4F6 !important;
+            }
+            .platform-card:hover .platform-name {
+              color: #FFFFFF !important;
+            }
+          `}</style>
         </div>
       </section>
 
