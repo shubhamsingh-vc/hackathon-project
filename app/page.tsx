@@ -3,6 +3,7 @@ import FeatureCard from "@/components/FeatureCard";
 import GeneratorToggle from "@/components/GeneratorToggle";
 import ScrollReveal from "@/components/ScrollReveal";
 import TestimonialsScroll from "@/components/TestimonialsScroll";
+import FAQAccordion from "@/components/FAQAccordion";
 
 /* ===== DATA ===== */
 const STATS = [
@@ -61,17 +62,6 @@ const STEPS = [
   },
 ];
 
-const TESTIMONIALS = [
-  { quote: "I went from spending 3 hours on captions to 30 seconds. The hooks are genuinely viral-worthy.", name: "Sarah Chen", handle: "@sarahchen.creates", avatar: "😀", platform: "Instagram", followers: "45K followers", accent: "#E1306C" },
-  { quote: "The hashtag suggestions alone got me on the FYP for the first time ever. Game changer for my channel.", name: "Marcus Rivera", handle: "@marcusrivera", avatar: "😎", platform: "TikTok", followers: "82K followers", accent: "#00F2EA" },
-  { quote: "I use ContentCraft every single day. It replaced my $200/month copywriter for first drafts.", name: "Aisha Okafor", handle: "@aishaokafor.fit", avatar: "🤩", platform: "YouTube", followers: "28K subscribers", accent: "#FF0000" },
-  { quote: "The script generator saved me hours every week. Long-form content used to be a nightmare, now it's effortless.", name: "Jake Thompson", handle: "@jakethompson.fit", avatar: "💪", platform: "YouTube", followers: "120K subscribers", accent: "#FF0000" },
-  { quote: "Best tool I've found for short-form content hooks. My retention rates went up 40% since I started using it.", name: "Priya Patel", handle: "@priyacreates", avatar: "✨", platform: "Instagram", followers: "67K followers", accent: "#E1306C" },
-  { quote: "As a brand manager, I generate 20+ pieces of content daily. ContentCraft makes it possible.", name: "David Kim", handle: "@davidkim.mkt", avatar: "🎯", platform: "TikTok", followers: "150K followers", accent: "#00F2EA" },
-  { quote: "The tone options are perfect for testing different content styles. I found my voice using this tool.", name: "Emma Rodriguez", handle: "@emmarodriguez", avatar: "🌟", platform: "Instagram", followers: "33K followers", accent: "#E1306C" },
-  { quote: "The posting schedule feature is underrated. It actually helped me build a consistent content calendar.", name: "Chris Nguyen", handle: "@chrisnguyen.tv", avatar: "📺", platform: "YouTube", followers: "55K subscribers", accent: "#FF0000" },
-];
-
 const PLATFORM_USE_CASES = [
   {
     platform: "Instagram",
@@ -108,33 +98,6 @@ const PLATFORM_USE_CASES = [
       "Script pacing for 15-60 second videos",
     ],
     tip: "TikTok rewards authenticity and speed. Our scripts are built for fast-paced, conversational delivery.",
-  },
-];
-
-const FAQS = [
-  {
-    q: "Is ContentCraft really free to use?",
-    a: "Yes! The generator is completely free during the hackathon demo. No credit card, no signup required — just enter your topic and generate.",
-  },
-  {
-    q: "Which AI model powers ContentCraft?",
-    a: "ContentCraft uses Claude Sonnet 4.6 via the OpusCode API gateway. Claude is known for nuanced, context-aware generation that's especially strong for creative writing tasks.",
-  },
-  {
-    q: "Can I use the generated content commercially?",
-    a: "Absolutely. The content you generate is yours to use however you want — on your personal accounts, client projects, or brand channels.",
-  },
-  {
-    q: "What makes a good hook vs. a bad one?",
-    a: "Great hooks create curiosity gaps, make bold claims, or tell micro-stories in 1-2 lines. Bad hooks are generic ('Hey everyone!') or don't promise any value. Our generator specifically avoids those patterns.",
-  },
-  {
-    q: "How many hashtags should I actually use?",
-    a: "Instagram allows 30, but research shows 8-15 is the sweet spot for reach + relevance. For TikTok, 3-5 highly relevant tags work best. YouTube is most effective with 5-8 targeted tags.",
-  },
-  {
-    q: "Can I generate content for multiple platforms at once?",
-    a: "Right now each generation targets one platform at a time — this keeps the output optimized. We're working on a cross-posting mode for the full release.",
   },
 ];
 
@@ -429,23 +392,7 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          <div className="space-y-4">
-            {FAQS.map((faq, i) => (
-              <ScrollReveal key={i} delay={i * 60}>
-                <div className="bezel-inner-subtle">
-                  <div className="flex items-start gap-4">
-                    <div className="w-5 h-5 rounded-full bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[10px] font-bold" style={{ color: "#7C3AED" }}>Q</span>
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-[#FAFAFA] mb-2">{faq.q}</h3>
-                      <p className="text-[14px] text-[#6B7280] leading-relaxed">{faq.a}</p>
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
+          <FAQAccordion />
         </div>
       </section>
 

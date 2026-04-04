@@ -2,7 +2,6 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import Link from "next/link";
 
 type Mode = "signin" | "signup";
 
@@ -74,7 +73,7 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
               </div>
               <h2 className="text-xl font-bold text-[#FAFAFA] mb-2">Forgot password?</h2>
               <p className="text-[14px] text-[#6B7280] leading-relaxed mb-6">
-                Enter your email and we'll send you a reset link.
+                Enter your email and we&apos;ll send you a reset link.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -350,7 +349,7 @@ export default function SignInPage() {
               </button>
 
               <p className="text-[12px] text-[#6B7280] text-center">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   type="button"
                   onClick={() => { setMode("signup"); setError(""); }}

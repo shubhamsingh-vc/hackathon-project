@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 
@@ -36,14 +37,14 @@ export default function Navbar() {
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
 
           {/* Logo */}
-          <a href="/" className="flex items-center gap-3 group flex-shrink-0">
+          <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-900/40 group-hover:shadow-purple-900/60 transition-all duration-500 group-hover:scale-105">
               C
             </div>
             <span className="text-[16px] font-bold text-[#FAFAFA]">
               Content<span className="glow-text">Craft</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Nav Links */}
           <div className="hidden lg:flex items-center gap-1">
@@ -73,9 +74,11 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-500 cursor-pointer"
                 >
                   {session.user.image ? (
-                    <img
+                    <Image
                       src={session.user.image}
                       alt={session.user.name || "User"}
+                      width={28}
+                      height={28}
                       className="w-7 h-7 rounded-full object-cover"
                     />
                   ) : (

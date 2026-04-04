@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppShell from "@/components/AppShell";
 import { useRouter } from "next/navigation";
+import AppShell from "@/components/AppShell";
 
 // ─── Types ───
 interface QueueItem {
@@ -201,7 +201,6 @@ function WeeklyPlanner({ queue, onRemove }: { queue: QueueItem[]; onRemove: (id:
   const getItemsForDay = (day: string) =>
     queue.filter((q) => q.day === day);
 
-  const pendingCount = queue.filter((q) => q.status === "pending").length;
   const doneCount = queue.filter((q) => q.status === "done").length;
 
   return (
@@ -370,28 +369,25 @@ function QueuePanel({ queue, onGenerate, onRemove }: { queue: QueueItem[]; onGen
         {done.length > 0 && (
           <>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280] pt-2">Generated</div>
-            {done.map((item) => {
-              const typeMeta = CONTENT_TYPES.find((t) => t.id === item.type) || CONTENT_TYPES[0];
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-3 rounded-xl opacity-60"
-                  style={{ background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.15)" }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[#E5E7EB] truncate">{item.topic}</p>
-                    <p className="text-[11px] text-[#6B7280]">{item.platform} · {item.day}</p>
-                  </div>
-                  <button
-                    onClick={() => onRemove(item.id)}
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#EF4444] hover:bg-white/5 transition-all text-[12px]"
-                  >
-                    ×
-                  </button>
+            {done.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 p-3 rounded-xl opacity-60"
+                style={{ background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.15)" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-[#E5E7EB] truncate">{item.topic}</p>
+                  <p className="text-[11px] text-[#6B7280]">{item.platform} · {item.day}</p>
                 </div>
-              );
-            })}
+                <button
+                  onClick={() => onRemove(item.id)}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#EF4444] hover:bg-white/5 transition-all text-[12px]"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </>
         )}
       </div>
@@ -401,18 +397,14 @@ function QueuePanel({ queue, onGenerate, onRemove }: { queue: QueueItem[]; onGen
 
 // ─── Main Dashboard ───
 export default function DashboardPage() {
-  const router = useRouter();
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [generating, setGenerating] = useState(false);
-
-  // Load queue from localStorage
-  useEffect(() => {
+  const [queue, setQueue] = useState<QueueItem[]>(() => {
     try {
       const saved = localStorage.getItem("contentcraft_queue");
-      if (saved) setQueue(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [, setGenerating] = useState(false);
 
   // Save queue to localStorage
   useEffect(() => {
@@ -493,9 +485,6 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <a href="/generate" className="btn-ghost text-[14px] !py-2.5 !px-5 flex-shrink-0">
-                Quick Generate
-              </a>
               <button
                 onClick={() => setShowAddModal(true)}
                 className="btn-primary text-[14px] !py-2.5 !px-6 flex-shrink-0"
@@ -544,7 +533,7 @@ export default function DashboardPage() {
               <div className="text-3xl mb-3">📅</div>
               <h3 className="text-[16px] font-bold text-[#FAFAFA] mb-2">Plan your content week</h3>
               <p className="text-[13px] text-[#6B7280] mb-5 max-w-sm mx-auto">
-                Add content topics to your weekly plan. When you're ready, generate all at once with one click.
+                Add content topics to your weekly plan. When you&apos;re ready, generate all at once with one click.
               </p>
               <button
                 onClick={() => setShowAddModal(true)}

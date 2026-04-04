@@ -60,7 +60,7 @@ export default function GeneratorToggle() {
                   </div>
 
                   <h2 className="text-[24px] md:text-[32px] font-extrabold tracking-tight text-[#FAFAFA] mb-3 group-hover:text-white transition-colors">
-                    Try it now — it's <span className="glow-text">completely free</span>
+                    Try it now — it&apos;s <span className="glow-text">completely free</span>
                   </h2>
                   <p className="text-[14px] text-[#6B7280] mb-6 max-w-sm mx-auto">
                     No signup, no credit card. Just your topic and the power of AI.

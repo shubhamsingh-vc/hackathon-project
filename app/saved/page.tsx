@@ -237,7 +237,7 @@ export default function SavedPage() {
               <div className="text-5xl mb-6">📚</div>
               <h2 className="text-xl font-bold text-[#FAFAFA] mb-3">Your library is empty</h2>
               <p className="text-[15px] text-[#6B7280] mb-8 max-w-sm mx-auto">
-                Generate content and click "Save to Library" to build your collection.
+                Generate content and click &quot;Save to Library&quot; to build your collection.
               </p>
               <a href="/generate" className="btn-primary text-[15px] py-3 px-8">
                 Start Generating

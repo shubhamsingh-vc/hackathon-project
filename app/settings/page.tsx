@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import AppShell from "@/components/AppShell";
 import { signOut } from "next-auth/react";
@@ -63,9 +64,11 @@ export default function SettingsPage() {
 
               <div className="flex items-center gap-5 mb-8">
                 {session?.user?.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || "User"}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full object-cover border-2 border-white/10"
                   />
                 ) : (
@@ -172,7 +175,7 @@ export default function SettingsPage() {
             <div className="bezel-inner p-8">
               <h2 className="text-[16px] font-bold text-[#EF4444] mb-2">Sign Out</h2>
               <p className="text-[13px] text-[#6B7280] mb-6">
-                Once you sign out, you'll need to sign back in to access your saved content.
+                Once you sign out, you&apos;ll need to sign back in to access your saved content.
               </p>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}

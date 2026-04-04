@@ -65,7 +65,7 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
       </div>
 
       {/* Quote */}
-      <div className="text-[22px] leading-snug mb-4" style={{ color: "rgba(250,250,250,0.35)" }}>"</div>
+      <div className="text-[22px] leading-snug mb-4" style={{ color: "rgba(250,250,250,0.35)" }}>&quot;</div>
       <p className="text-[14px] text-[#D1D5DB] leading-relaxed mb-6 group-hover:text-[#FAFAFA] transition-colors duration-500">
         {t.quote}
       </p>

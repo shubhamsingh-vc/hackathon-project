@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -74,7 +75,6 @@ const NAV_ITEMS: NavItem[] = [
 function NavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-  const Icon = item.icon;
 
   return (
     <Link
@@ -185,9 +185,11 @@ export default function Sidebar() {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.05] transition-all duration-300 cursor-pointer group"
           >
             {session?.user?.image ? (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name || "User"}
+                width={32}
+                height={32}
                 className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-white/10"
               />
             ) : (

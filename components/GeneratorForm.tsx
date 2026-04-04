@@ -115,7 +115,6 @@ export default function GeneratorForm() {
   const [goals, setGoals] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
   // Filtered niches for search
   const filteredNiches = NICHES.filter((n) =>
@@ -162,7 +161,6 @@ export default function GeneratorForm() {
 
   const handleSaveProfile = async () => {
     setProfileSaving(true);
-    setProfileError(null);
     const profile = { niche, targetAudience, goals };
     try {
       const res = await fetch("/api/profile", {
@@ -184,7 +182,6 @@ export default function GeneratorForm() {
   };
 
   const creatorProfile: CreatorProfile = { niche, targetAudience, goals };
-  const hasProfile = niche || targetAudience || goals.length > 0;
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -727,7 +724,6 @@ export default function GeneratorForm() {
           tone={tone}
           topic={topic}
           creatorProfile={creatorProfile}
-          duration={duration}
           onRegenerate={(newContent) => setResult({ type: result.type, content: newContent })}
         />
       )}

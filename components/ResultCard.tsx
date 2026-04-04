@@ -15,7 +15,6 @@ interface ResultCardProps {
     targetAudience: string;
     goals: string[];
   };
-  duration?: string;
   onRegenerate?: (newContent: string | string[]) => void;
 }
 
@@ -60,11 +59,6 @@ function TopBar({ color }: { color: string }) {
   return <div className="h-px w-full mb-5" style={{ background: `linear-gradient(90deg, transparent, ${color}60, ${color}90, ${color}60, transparent)` }} />;
 }
 
-// ─── Content highlight palette ───
-// Hook=purple, Body=black, CTA=green
-const HOOK_COLOR    = "#C084FC"; // Purple — hook text
-const BODY_COLOR    = "#334155"; // Black/dark — body text
-const CTA_COLOR     = "#34D399"; // Green — CTA text
 function HashtagsOutput({ content }: { content: string[] }) {
   const allTags = content.join(" ");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -108,7 +102,7 @@ function HashtagsOutput({ content }: { content: string[] }) {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {content.map((tag, i) => {
           const cat = catOf(tag);
           const s = catStyle[cat];
@@ -124,7 +118,7 @@ function HashtagsOutput({ content }: { content: string[] }) {
                 setCopiedTag(tag);
                 setTimeout(() => setCopiedTag(null), 1500);
               }}
-              className="px-3 py-1.5 rounded-full text-[12px] font-medium border border-white/8 text-[#9CA3AF] hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
+              className="px-4 py-2 rounded-full text-[13px] font-medium border border-white/8 text-[#9CA3AF] hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
             >
               {isCopied ? (
                 <span className="flex items-center gap-1" style={{ color: "#34D399" }}>
@@ -152,25 +146,25 @@ function HooksOutput({ content }: { content: string[] }) {
         <span className="text-[11px] text-[#6B7280]">— tap to copy</span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {content.map((hook, i) => {
           return (
             <button
               key={i}
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(hook); }}
-              className="group w-full text-left rounded-xl p-4 border border-white/8 hover:border-white/15 transition-all duration-200 relative overflow-hidden"
+              className="group w-full text-left rounded-2xl p-5 border border-white/8 hover:border-white/15 transition-all duration-200 relative overflow-hidden"
               style={{ background: "rgba(255,255,255,0.02)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.02)"; }}
             >
               {/* Left accent bar — purple */}
               <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full" style={{ background: "#C084FC" }} />
 
-              <div className="flex items-start gap-4 pl-4">
+              <div className="flex items-start gap-5 pl-5">
                 {/* HOOK label */}
                 <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md mt-0.5 flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg mt-0.5 flex-shrink-0"
                   style={{ background: "rgba(192,132,252,0.1)", border: "1px solid rgba(192,132,252,0.25)" }}
                 >
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C084FC" }} />
@@ -178,15 +172,15 @@ function HooksOutput({ content }: { content: string[] }) {
                 </div>
 
                 {/* Number + text */}
-                <div className="flex items-start gap-3 flex-1">
+                <div className="flex items-start gap-4 flex-1">
                   <span
-                    className="text-[18px] font-bold flex-shrink-0 leading-none mt-1"
+                    className="text-[20px] font-bold flex-shrink-0 leading-none mt-1"
                     style={{ color: "#C084FC", opacity: 0.35 }}
                   >
                     {i + 1}
                   </span>
                   <span
-                    className="text-[14px] leading-relaxed pt-0.5"
+                    className="text-[15px] leading-relaxed pt-0.5"
                     style={{ color: "#C084FC" }}
                   >
                     {hook}
@@ -210,13 +204,6 @@ function CaptionOutput({ content }: { content: string }) {
   const isCTA = (l: string) => /\b(follow|comment|share|save|link in bio|visit|subscribe|tag|dm me|like|hit|check out|follow for more)/i.test(l);
   const isHook = (l: string, idx: number) =>
     idx === 0 || (idx === 1 && isEmoji(lines[0] ?? ""));
-
-  // Find emoji line index
-  const emojiIdx = lines.findIndex((l, i) => i === 0 && isEmoji(l));
-  // Find first non-emoji line
-  const firstTextIdx = emojiIdx === 0 ? 1 : 0;
-  // CTA = last 2 lines if they contain CTA words
-  const ctaStartIdx = Math.max(firstTextIdx + 1, lines.length - 2);
 
   // Detect which lines are which type
   const getLineType = (line: string, i: number) => {
@@ -251,7 +238,14 @@ function CaptionOutput({ content }: { content: string }) {
     return "body";
   };
 
-  let lastSection = "";
+  // Precompute showBadge for each line — avoids mutating a variable
+  const showBadges: boolean[] = [];
+  let prevType = "";
+  for (const [i, line] of lines.entries()) {
+    const type = currentSection(line, i);
+    showBadges.push(type !== prevType);
+    prevType = type;
+  }
 
   return (
     <div>
@@ -264,17 +258,14 @@ function CaptionOutput({ content }: { content: string }) {
         <CopyBtn text={content} label="Copy" />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-5">
         {lines.map((line, i) => {
           const type = currentSection(line, i);
+          const showBadge = showBadges[i];
           const accent = sectionAccents[type as keyof typeof sectionAccents];
           const label = sectionLabels[type as keyof typeof sectionLabels];
           const textColor = sectionTextColors[type as keyof typeof sectionTextColors];
           const trimmed = line.trim();
-
-          // Show section badge when section changes
-          const showBadge = type !== lastSection;
-          if (type !== lastSection) lastSection = type;
 
           // Emoji opener — large
           if (isEmoji(line) && i === 0) {
@@ -288,9 +279,9 @@ function CaptionOutput({ content }: { content: string }) {
           return (
             <div key={i}>
               {showBadge && (
-                <div className="flex items-center gap-2 mt-4 mb-2">
+                <div className="flex items-center gap-2 mt-6 mb-3">
                   <div
-                    className="flex items-center gap-2 px-3 py-1 rounded-lg"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                     style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
                   >
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
@@ -456,7 +447,8 @@ function ScriptOutput({ content }: { content: string }) {
   if (items.length === 0) {
     const rawLines = content.split("\n").filter((l) => l.trim());
     if (rawLines.length === 0) return null;
-    let secs = 0;
+    // Precompute timestamps — avoids mutating a variable
+    const timestamps = rawLines.map((_, i) => `${Math.floor((i * 4) / 60)}:${String(Math.floor((i * 4) % 60)).padStart(2, "0")}`);
     return (
       <div>
         <TopBar color="#334155" />
@@ -466,8 +458,7 @@ function ScriptOutput({ content }: { content: string }) {
         </div>
         <div className="space-y-2">
           {rawLines.map((line, i) => {
-            const ts = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
-            secs += 4;
+            const ts = timestamps[i];
             const isCopied = copiedLine === i;
             return (
               <div
@@ -539,14 +530,14 @@ function ScriptOutput({ content }: { content: string }) {
         <CopyBtn text={content} label="Copy Script" />
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         {sections.map((section, si) => (
           <div key={si}>
             {/* Section header badge */}
             <SectionBadge label={section.label} accent={section.accent} timestamp={section.timestamp} />
 
             {/* Lines in section */}
-            <div className="space-y-1.5 pl-1">
+            <div className="space-y-2 pl-1">
               {section.lines.map((line, li) => {
                 // Scene cue
                 if (line.kind === "scene") {
@@ -560,12 +551,11 @@ function ScriptOutput({ content }: { content: string }) {
 
                 // Spoken line: timestamp + text
                 if (line.kind === "spoken") {
-                  const lineKey = `${si}-${li}`;
                   const isCopied = copiedLine === li;
                   return (
                     <div
                       key={li}
-                      className="group flex items-start gap-3 py-2.5 px-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
+                      className="group flex items-start gap-3 py-3 px-4 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -614,7 +604,7 @@ function ScriptOutput({ content }: { content: string }) {
 }
 
 // ─── Edit Overlay ───
-function EditOverlay({ content, type, onSave, onCancel }: { content: string | string[]; type: string; onSave: (newContent: string | string[]) => void; onCancel: () => void }) {
+function EditOverlay({ content, onSave, onCancel }: { content: string | string[]; onSave: (newContent: string | string[]) => void; onCancel: () => void }) {
   const isArray = Array.isArray(content);
   const editText = isArray ? content.join("\n") : content;
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -786,7 +776,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
 // Need React import for useRef
 import React from "react";
 
-export default function ResultCard({ type, content: initialContent, platform, tone, topic, creatorProfile, duration, onRegenerate }: ResultCardProps) {
+export default function ResultCard({ type, content: initialContent, platform, tone, topic, creatorProfile, onRegenerate }: ResultCardProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [content, setContent] = useState(initialContent);
@@ -844,7 +834,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
   };
 
   return (
-    <div className="p-6 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="p-8 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -897,7 +887,7 @@ export default function ResultCard({ type, content: initialContent, platform, to
 
       {/* Content */}
       {editing ? (
-        <EditOverlay content={content} type={type} onSave={handleEditSave} onCancel={() => setEditing(false)} />
+        <EditOverlay content={content} onSave={handleEditSave} onCancel={() => setEditing(false)} />
       ) : (
         <>
           {type === "hashtags" && Array.isArray(content) && <HashtagsOutput content={content} />}
