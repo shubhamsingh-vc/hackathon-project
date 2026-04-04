@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import FeatureCard from "@/components/FeatureCard";
-import GeneratorForm from "@/components/GeneratorForm";
+import GeneratorToggle from "@/components/GeneratorToggle";
 import ScrollReveal from "@/components/ScrollReveal";
 import TestimonialsScroll from "@/components/TestimonialsScroll";
 
@@ -272,33 +272,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== GENERATOR ===== */}
-      <section id="generator" className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <div className="text-center mb-16">
-              <span className="eyebrow mb-6 inline-flex">
-                <span style={{ color: "#7C3AED" }}>◆</span>
-                AI Generator
-              </span>
-              <h2 className="text-[36px] md:text-[52px] font-extrabold tracking-tight text-[#FAFAFA] mb-5">
-                Try it now — it's free
-              </h2>
-              <p className="text-[16px] text-[#6B7280] max-w-md mx-auto">
-                No signup, no credit card. Just your topic and the power of AI.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal blur delay={100}>
-            <div className="bezel-outer">
-              <div className="bezel-inner p-8 md:p-12">
-                <GeneratorForm />
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      {/* ===== GENERATOR — Collapsible ===== */}
+      <GeneratorToggle />
 
       {/* ===== HOW IT WORKS ===== */}
       <section id="how-it-works" className="py-24 px-6 border-t border-white/[0.05]">
