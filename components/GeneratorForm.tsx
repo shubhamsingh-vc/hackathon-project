@@ -76,6 +76,7 @@ const TONES = [
 
 const SCRIPT_DURATIONS = [
   { id: "short", label: "Short — 15 to 60s" },
+  { id: "medium", label: "Medium — 1 to 3 min" },
   { id: "long", label: "Long — 3 to 10 min" },
 ];
 

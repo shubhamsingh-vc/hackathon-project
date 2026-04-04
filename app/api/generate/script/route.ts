@@ -12,16 +12,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Topic and platform are required" }, { status: 400 });
     }
 
-    const formatMap: Record<string, { lines: string; time: string; style: string }> = {
+    const formatMap: Record<string, { lines: string; time: string; style: string; minLines: number; secPerLine: number }> = {
       short: {
-        lines: "8-15 lines",
+        lines: "8-12 lines",
         time: "15-60 seconds",
         style: "fast-paced, high energy",
+        minLines: 8,
+        secPerLine: 4,
+      },
+      medium: {
+        lines: "15-25 lines",
+        time: "1-3 minutes",
+        style: "engaging and conversational",
+        minLines: 15,
+        secPerLine: 5,
       },
       long: {
-        lines: "20-30 lines",
+        lines: "30-50 lines",
         time: "3-10 minutes",
-        style: "detailed and structured",
+        style: "detailed, structured, and in-depth",
+        minLines: 30,
+        secPerLine: 6,
       },
     };
 
@@ -36,14 +47,16 @@ export async function POST(req: NextRequest) {
 
     const prompt = `Write a ${format.style} ${tone || "engaging"} video script for ${platform} about "${topic}".
 ${profileContext}
-Format: ${format.lines}, ~${format.time}.
+Format: AT LEAST ${format.minLines} lines of actual spoken script content, ~${format.time}.
+Each line should be ${format.secPerLine}-${format.secPerLine + 3} seconds of speech (~${Math.round(format.secPerLine * 2.5)} words max per line).
 ${platformTips[platform] || platform}
 Structure: HOOK → BODY → CTA.
-[SCENE] cues in brackets. Timestamps [0:00]. Conversational body.
-No camera directions. No preamble. Output only script.
+[SCENE] cues in brackets. Timestamps [0:00]. Conversational, natural language.
+Write full sentences, not bullet points. This is what the creator will READ OFF CAMERA.
+No camera directions. No preamble. Output ONLY the script — no labels, no explanations.
 CRITICAL: Do NOT use any markdown formatting (no **bold**, no *italic*, no ## headings). Plain text only.`;
 
-    const maxTokens = duration === "long" ? 800 : 400;
+    const maxTokens = duration === "long" ? 2000 : duration === "medium" ? 1200 : 400;
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], maxTokens);
     const script = extractText(response);
 
