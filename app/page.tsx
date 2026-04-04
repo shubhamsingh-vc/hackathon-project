@@ -334,41 +334,48 @@ export default function Home() {
           </ScrollReveal>
 
           <div className="space-y-5">
-            {PLATFORM_USE_CASES.map((item, i) => (
-              <ScrollReveal key={item.platform} delay={i * 100}>
-                <div className="bezel-outer">
-                  <div className="bezel-inner p-7 md:p-8">
-                    <div className="flex flex-col md:flex-row gap-8">
-                      {/* Platform header */}
-                      <div className="md:w-48 flex-shrink-0">
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="text-3xl">{item.emoji}</span>
-                          <div>
-                            <div className="text-[17px] font-bold text-[#FAFAFA]">{item.platform}</div>
-                            <div className="w-8 h-0.5 mt-2 rounded-full" style={{ background: item.color }} />
-                          </div>
+            {/* Platform Comparison Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {PLATFORM_USE_CASES.map((item, i) => (
+                <ScrollReveal key={item.platform} delay={i * 100}>
+                  <div
+                    className="rounded-2xl overflow-hidden h-full flex flex-col"
+                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${item.color}20` }}
+                  >
+                    {/* Platform header */}
+                    <div className="p-6" style={{ borderBottom: `1px solid ${item.color}15` }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold"
+                          style={{ background: `${item.color}18`, border: `1px solid ${item.color}30` }}
+                        >
+                          {item.emoji}
                         </div>
-                        <p className="text-[13px] text-[#6B7280] leading-relaxed">{item.tip}</p>
+                        <div>
+                          <div className="text-[16px] font-bold text-[#FAFAFA]">{item.platform}</div>
+                          <div className="h-0.5 w-8 mt-1.5 rounded-full" style={{ background: item.color }} />
+                        </div>
                       </div>
+                      <p className="text-[12px] text-[#6B7280] leading-relaxed">{item.tip}</p>
+                    </div>
 
-                      {/* Benefits */}
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {item.benefits.map((benefit) => (
-                          <div key={benefit} className="flex items-start gap-3">
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${item.color}18` }}>
-                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="2 6 5 9 10 3"/>
-                              </svg>
-                            </div>
-                            <span className="text-[13px] text-[#9CA3AF] leading-relaxed">{benefit}</span>
+                    {/* Benefits list */}
+                    <div className="p-6 flex-1 space-y-3">
+                      {item.benefits.map((benefit) => (
+                        <div key={benefit} className="flex items-start gap-3">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${item.color}15` }}>
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke={item.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="2 6 5 9 10 3"/>
+                            </svg>
                           </div>
-                        ))}
-                      </div>
+                          <span className="text-[13px] text-[#D1D5DB] leading-relaxed">{benefit}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              ))}
+            </div>
           </div>
         </div>
       </section>
