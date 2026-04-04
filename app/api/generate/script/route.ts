@@ -20,13 +20,6 @@ export async function POST(req: NextRequest) {
         minLines: 8,
         secPerLine: 4,
       },
-      medium: {
-        lines: "15-25 lines",
-        time: "1-3 minutes",
-        style: "engaging and conversational",
-        minLines: 15,
-        secPerLine: 5,
-      },
       long: {
         lines: "30-50 lines",
         time: "3-10 minutes",
@@ -56,7 +49,7 @@ Write full sentences, not bullet points. This is what the creator will READ OFF 
 No camera directions. No preamble. Output ONLY the script — no labels, no explanations.
 CRITICAL: Do NOT use any markdown formatting (no **bold**, no *italic*, no ## headings). Plain text only.`;
 
-    const maxTokens = duration === "long" ? 2000 : duration === "medium" ? 1200 : 400;
+    const maxTokens = duration === "long" ? 2000 : 400;
     const response = await createMessage(MODEL, [{ role: "user", content: prompt }], maxTokens);
     const script = extractText(response);
 
