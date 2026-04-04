@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import FeatureCard from "@/components/FeatureCard";
 import GeneratorForm from "@/components/GeneratorForm";
 import ScrollReveal from "@/components/ScrollReveal";
+import TestimonialsScroll from "@/components/TestimonialsScroll";
 
 /* ===== DATA ===== */
 const STATS = [
@@ -61,27 +62,14 @@ const STEPS = [
 ];
 
 const TESTIMONIALS = [
-  {
-    quote: "I went from spending 3 hours on captions to 30 seconds. The hooks are genuinely viral-worthy.",
-    name: "Sarah Chen",
-    handle: "@sarahchen.creates",
-    avatar: "😀",
-    platform: "Instagram — 45K followers",
-  },
-  {
-    quote: "The hashtag suggestions alone got me on the FYP for the first time ever. Game changer for my channel.",
-    name: "Marcus Rivera",
-    handle: "@marcusrivera",
-    avatar: "😎",
-    platform: "TikTok — 82K followers",
-  },
-  {
-    quote: "I use ContentCraft every single day. It replaced my $200/month copywriter for first drafts.",
-    name: "Aisha Okafor",
-    handle: "@aishaokafor.fit",
-    avatar: "🤩",
-    platform: "YouTube — 28K subscribers",
-  },
+  { quote: "I went from spending 3 hours on captions to 30 seconds. The hooks are genuinely viral-worthy.", name: "Sarah Chen", handle: "@sarahchen.creates", avatar: "😀", platform: "Instagram", followers: "45K followers", accent: "#E1306C" },
+  { quote: "The hashtag suggestions alone got me on the FYP for the first time ever. Game changer for my channel.", name: "Marcus Rivera", handle: "@marcusrivera", avatar: "😎", platform: "TikTok", followers: "82K followers", accent: "#00F2EA" },
+  { quote: "I use ContentCraft every single day. It replaced my $200/month copywriter for first drafts.", name: "Aisha Okafor", handle: "@aishaokafor.fit", avatar: "🤩", platform: "YouTube", followers: "28K subscribers", accent: "#FF0000" },
+  { quote: "The script generator saved me hours every week. Long-form content used to be a nightmare, now it's effortless.", name: "Jake Thompson", handle: "@jakethompson.fit", avatar: "💪", platform: "YouTube", followers: "120K subscribers", accent: "#FF0000" },
+  { quote: "Best tool I've found for short-form content hooks. My retention rates went up 40% since I started using it.", name: "Priya Patel", handle: "@priyacreates", avatar: "✨", platform: "Instagram", followers: "67K followers", accent: "#E1306C" },
+  { quote: "As a brand manager, I generate 20+ pieces of content daily. ContentCraft makes it possible.", name: "David Kim", handle: "@davidkim.mkt", avatar: "🎯", platform: "TikTok", followers: "150K followers", accent: "#00F2EA" },
+  { quote: "The tone options are perfect for testing different content styles. I found my voice using this tool.", name: "Emma Rodriguez", handle: "@emmarodriguez", avatar: "🌟", platform: "Instagram", followers: "33K followers", accent: "#E1306C" },
+  { quote: "The posting schedule feature is underrated. It actually helped me build a consistent content calendar.", name: "Chris Nguyen", handle: "@chrisnguyen.tv", avatar: "📺", platform: "YouTube", followers: "55K subscribers", accent: "#FF0000" },
 ];
 
 const PLATFORM_USE_CASES = [
@@ -410,50 +398,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="py-24 px-6 border-t border-white/[0.05]">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <div className="text-center mb-20">
-              <span className="eyebrow mb-6 inline-flex">
-                <span style={{ color: "#F59E0B" }}>★</span>
-                Testimonials
-              </span>
-              <h2 className="text-[36px] md:text-[52px] font-extrabold tracking-tight text-[#FAFAFA] mb-5">
-                Loved by creators
-              </h2>
-            </div>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t, i) => (
-              <ScrollReveal key={t.name} delay={i * 100}>
-                <div className="bezel-inner-subtle h-full group">
-                  {/* Quote */}
-                  <div className="text-[22px] leading-snug mb-6" style={{ color: "rgba(250,250,250,0.5)" }}>"</div>
-                  <p className="text-[15px] text-[#E5E7EB] leading-relaxed mb-8 group-hover:text-white transition-colors duration-500">
-                    {t.quote}
-                  </p>
-
-                  {/* Divider */}
-                  <div className="h-px bg-white/[0.06] mb-6" />
-
-                  {/* Author */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center text-xl">
-                      {t.avatar}
-                    </div>
-                    <div>
-                      <div className="text-[14px] font-semibold text-[#FAFAFA]">{t.name}</div>
-                      <div className="text-[12px] text-[#6B7280]">{t.platform}</div>
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ===== TESTIMONIALS — Scrolling ===== */}
+      <TestimonialsScroll />
 
       {/* ===== FAQ ===== */}
       <section id="faq" className="py-24 px-6 border-t border-white/[0.05]">
