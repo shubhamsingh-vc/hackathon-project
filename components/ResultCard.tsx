@@ -670,6 +670,113 @@ function EditOverlay({ content, type, onSave, onCancel }: { content: string | st
   );
 }
 
+// ─── Schedule Panel ───
+const PEAK_HOURS: Record<string, string[]> = {
+  instagram: ["9:00 AM", "12:00 PM", "7:00 PM", "9:00 PM"],
+  tiktok: ["7:00 AM", "12:00 PM", "6:00 PM", "9:00 PM"],
+  youtube: ["2:00 PM", "5:00 PM", "8:00 PM"],
+  twitter: ["8:00 AM", "12:00 PM", "5:00 PM"],
+  linkedin: ["8:00 AM", "12:00 PM", "5:00 PM"],
+  facebook: ["1:00 PM", "4:00 PM", "8:00 PM"],
+};
+
+const BEST_DAYS: Record<string, string[]> = {
+  instagram: ["Tuesday", "Wednesday", "Thursday", "Saturday"],
+  tiktok: ["Tuesday", "Thursday", "Friday", "Saturday"],
+  youtube: ["Thursday", "Friday", "Saturday"],
+  twitter: ["Tuesday", "Wednesday", "Thursday"],
+  linkedin: ["Tuesday", "Wednesday", "Thursday"],
+  facebook: ["Wednesday", "Thursday", "Friday"],
+};
+
+const FREQUENCY_RECS: Record<string, { label: string; detail: string; accent: string }> = {
+  hook: { label: "1x/day", detail: "Hooks work best with consistent daily posting", accent: "#C084FC" },
+  script: { label: "1x/day", detail: "Quality scripts deserve daily visibility", accent: "#60A5FA" },
+  caption: { label: "3-5x/week", detail: "Pair with visuals for maximum reach", accent: "#34D399" },
+  hashtags: { label: "1x/day", detail: "Fresh hashtags boost discoverability each day", accent: "#FB923C" },
+};
+
+function SchedulePanel({ type, platform }: { type: string; platform: string }) {
+  const [open, setOpen] = useState(false);
+  const platformKey = platform.toLowerCase();
+  const peakTimes = PEAK_HOURS[platformKey] || PEAK_HOURS.instagram;
+  const bestDays = BEST_DAYS[platformKey] || BEST_DAYS.instagram;
+  const freq = FREQUENCY_RECS[type] || FREQUENCY_RECS.caption;
+
+  return (
+    <div className="mt-4 rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Toggle header */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-all duration-200"
+      >
+        <div className="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FB923C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span className="text-[12px] font-semibold text-[#94A3B8]">Posting Schedule</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${freq.accent}15`, color: freq.accent }}>
+            {freq.label}
+          </span>
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {/* Expanded content */}
+      {open && (
+        <div className="px-4 pb-4 space-y-4">
+          {/* Frequency */}
+          <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: `${freq.accent}08`, border: `1px solid ${freq.accent}20` }}>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={freq.accent} strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: freq.accent }}>Recommended Frequency</span>
+              </div>
+              <p className="text-[13px] text-[#CBD5E1] leading-relaxed">{freq.detail}</p>
+            </div>
+          </div>
+
+          {/* Best times */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FB923C" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#FB923C]">Best Times to Post</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {peakTimes.map((time) => (
+                <span key={time} className="px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ background: "rgba(251,146,60,0.1)", color: "#FB923C", border: "1px solid rgba(251,146,60,0.2)" }}>
+                  {time}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Best days */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C084FC" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#C084FC]">Best Days</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {bestDays.map((day) => (
+                <span key={day} className="px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ background: "rgba(192,132,252,0.1)", color: "#C084FC", border: "1px solid rgba(192,132,252,0.2)" }}>
+                  {day}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main ResultCard ───
 const TYPE_META: Record<string, { label: string; color: string }> = {
   hook: { label: "Hook", color: "#C084FC" },
@@ -801,6 +908,9 @@ export default function ResultCard({ type, content: initialContent, platform, to
           {type === "script" && !Array.isArray(content) && <ScriptOutput content={content} />}
         </>
       )}
+
+      {/* Posting Schedule Recommendation */}
+      {!editing && <SchedulePanel type={type} platform={platform} />}
     </div>
   );
 }
